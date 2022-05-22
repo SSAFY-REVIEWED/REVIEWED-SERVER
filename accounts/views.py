@@ -6,8 +6,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
 from configs import settings
 import requests
@@ -27,12 +25,9 @@ def intro(request):
 @api_view(['GET',])
 @permission_classes([AllowAny])
 def google_login(request):
-    """
-    Code Request
-    """
     scope = "https://www.googleapis.com/auth/userinfo.email " + "https://www.googleapis.com/auth/userinfo.profile"
     client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-    return print(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
+    return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
 
 
 @api_view(['GET',])
@@ -128,22 +123,20 @@ def google_callback(request):
     client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
     client_secret = settings.SOCIAL_AUTH_GOOGLE_SECRET
     code = request.GET.get('code')
-    state= "random_string"
+    state= ""
 
-    """
-    Access Token Request
-    """
-    token_req = requests.post(
-        f"https://oauth2.googleapis.com/token?client_id={client_id}&client_secret={client_secret}&code={code}&grant_type=authorization_code&redirect_uri={GOOGLE_CALLBACK_URI}&state={state}")
+    # Access Token Request
+
+    token_req = requests.post(f"https://oauth2.googleapis.com/token?client_id={client_id}&client_secret={client_secret}&code={code}&grant_type=authorization_code&redirect_uri={GOOGLE_CALLBACK_URI}&state={state}")
     token_req_json = token_req.json()
     error = token_req_json.get("error")
     if error is not None:
         raise JSONDecodeError(error)
     access_token = token_req_json.get('access_token')
 
-    """
-    Email Request
-    """
+
+    # Email Request
+
     user_info_response = requests.get(
         f"https://www.googleapis.com/oauth2/v1/userinfo?&access_token={access_token}")
     response_status = user_info_response.status_code
@@ -154,7 +147,6 @@ def google_callback(request):
             'username': user_data.get('email', ''),
             'first_name': user_data.get('given_name', ''),
             'last_name': user_data.get('family_name', ''),
-            'nickname': user_data.get('nickname', ''),
             'name': user_data.get('name', ''),
             'image': user_data.get('picture', None),
             'path': "google",
