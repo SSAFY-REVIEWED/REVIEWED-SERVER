@@ -14,22 +14,22 @@ def detail(request, movie_pk):
     payload = jwt.decode(access_token, verify=False)
     user = User.objects.get(id=payload['user_id'])
     movie = get_object_or_404(Movie, pk=movie_pk)
-
+    ratings = movie.rating_set.all()
     rate = 0
-    if Rating.objects.filter(user_id=user.id).exists():
-        rating = Rating.objects.filter(user_id=user.id)[0]
-        rate = rating.score
-
-    total = 0
-    tmp = movie.rating_set.all()
-    for t in tmp:
-        total += t.score
-    ea = movie.rating_set.count()
-    avg = total / ea
+    if ratings:
+        if ratings.filter(user_id=user.id).exists():
+            rating = Rating.objects.get(user_id=user.id)
+            rate = rating.score
+        total = 0
+        for t in ratings:
+            total += t.score
+        ea = movie.rating_set.count()
+        if total:
+            avg = total / ea
+    else:
+        avg = 0
 
     liked = False
-
-
     if movie.like_users.filter(pk=user.id).exists():
         movie.like_users.remove(user)
     else:
