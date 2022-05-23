@@ -8,10 +8,9 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
 from configs import settings
-import requests
-from json.decoder import JSONDecodeError
 from .models import User
 from .serializers import UserJWTSignupSerializer, UserJWTLoginSerializer
+import jwt
 
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/v1/google/callback/'
@@ -34,13 +33,16 @@ def google_login(request):
 @permission_classes([AllowAny])
 def email_validate(request):
     email = request.data['email']
-    result = True
     if User.objects.filter(email=email).exists():
-        result = False
-    data = {
-        'result': result
-    }
-    return JsonResponse(data)
+        data = {
+            'message': "사용가능한 이메일 주소입니다."
+        }
+        return JsonResponse(data, status=status.HTTP_202_ACCEPTED)
+    else:
+        data = {
+            'message': "중복된 이메일이 존재합니다."
+        }
+        return JsonResponse(data, status=status.HTTP_409_CONFLICT)
     
 
 @api_view(['GET',])
@@ -54,6 +56,23 @@ def main(request):
         'status': 'This is main page'
     }
     return Response(data)
+
+
+@api_view(['GET',])
+def user_info(request):
+    access_token = request.headers.get('Authorization', None)[7:]
+    if access_token:
+        payload = jwt.decode(access_token, verify=False)
+        user = User.objects.get(id=payload['user_id'])
+        data = {
+            'name': user.first_name + user.last_name,
+            'user_id': user.id,
+            'profile_img': '/media/' + str(user.profile_img),
+            'survey': bool(user.survey),
+        }
+        return Response(data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 def history(request):
     return
@@ -89,11 +108,15 @@ class JWTSignupView(APIView):
             data = {
                 'access': access,
                 'refresh': refresh,
-                'method': 'signup complete'
+                'message': '회원가입 성공'
             }
             return JsonResponse(data, status=status.HTTP_201_CREATED)
         else:
-            return JsonResponse(serializer.errors)
+            data = {
+                'message': serializer.errors
+            }
+            return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
+
 
 @permission_classes([AllowAny])
 class JWTLoginView(APIView):
@@ -103,54 +126,75 @@ class JWTLoginView(APIView):
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid(raise_exception=False):
-            # user = serializer.validated_data['user']
             access = serializer.validated_data['access']
             refresh = serializer.validated_data['refresh']
-
-            return JsonResponse({
+            
+            data = {
                 'access': access,
                 'refresh': refresh,
-                'method': 'login complete'
-            })
+                'message': '로그인 성공'
+            }
+
+            return JsonResponse(data, status=status.HTTP_202_ACCEPTED)
         else:
-            return JsonResponse(serializer.errors)
+            data = {
+                'message': serializer.errors
+            }
+            return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
 
             
-@api_view(['GET',])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def google_callback(request):
 
-    client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-    client_secret = settings.SOCIAL_AUTH_GOOGLE_SECRET
-    code = request.GET.get('code')
-    state= ""
-
-    # Access Token Request
-
-    token_req = requests.post(f"https://oauth2.googleapis.com/token?client_id={client_id}&client_secret={client_secret}&code={code}&grant_type=authorization_code&redirect_uri={GOOGLE_CALLBACK_URI}&state={state}")
-    token_req_json = token_req.json()
-    error = token_req_json.get("error")
-    if error is not None:
-        raise JSONDecodeError(error)
-    access_token = token_req_json.get('access_token')
-
-
-    # Email Request
-
-    user_info_response = requests.get(
-        f"https://www.googleapis.com/oauth2/v1/userinfo?&access_token={access_token}")
-    response_status = user_info_response.status_code
-    if response_status != 200:
-        return JsonResponse({'err_msg': 'failed to get email'}, status=status.HTTP_400_BAD_REQUEST)
-    user_data = user_info_response.json()
+    credential = request.data['credential']
+    user_data = jwt.decode(credential, verify=False)
+    
+    email = user_data.get('email', '')
     profile_data = {
-            'username': user_data.get('email', ''),
-            'first_name': user_data.get('given_name', ''),
-            'last_name': user_data.get('family_name', ''),
-            'name': user_data.get('name', ''),
-            'image': user_data.get('picture', None),
-            'path': "google",
+        'email': user_data.get('email', ''),
+        'name': user_data.get('name', ''),
+        'profile_img': user_data.get('picture', None),
+        'password': 'googleAuth'
         }
 
-    return Response(profile_data)
-    
+    if User.objects.filter(email=email).exists():
+        serializer = UserJWTLoginSerializer(data=profile_data)
+
+        if serializer.is_valid(raise_exception=False):
+            access = serializer.validated_data['access']
+            refresh = serializer.validated_data['refresh']
+            
+            data = {
+                'access': access,
+                'refresh': refresh,
+                'message': '로그인 성공'
+            }
+
+            return JsonResponse(data, status=status.HTTP_202_ACCEPTED)
+        else:
+            data = {
+                'message': serializer.errors
+            }
+            return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
+
+    else:
+        serializer = UserJWTSignupSerializer(data=profile_data)
+
+        if serializer.is_valid(raise_exception=False):
+            user = serializer.save(request)
+            token = RefreshToken.for_user(user)
+            refresh = str(token)
+            access = str(token.access_token)
+
+            data = {
+                'access': access,
+                'refresh': refresh,
+                'message': '회원가입 성공'
+            }
+            return JsonResponse(data, status=status.HTTP_201_CREATED)
+        else:
+            data = {
+                'message': serializer.errors
+            }
+            return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)

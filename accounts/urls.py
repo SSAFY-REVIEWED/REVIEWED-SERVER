@@ -1,7 +1,5 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework_simplejwt.views import TokenVerifyView
 from . import views
 
 urlpatterns = [
@@ -10,6 +8,8 @@ urlpatterns = [
 
     # 로그인 한 사용자 첫화면 (메인)
     path('main/', views.main),
+    # 유저정보
+    path('user-info/', views.user_info),
 
     # 로그인, 회원가입
     path('login/', views.JWTLoginView.as_view()),
@@ -17,9 +17,7 @@ urlpatterns = [
     path('email/', views.email_validate),
 
     # JWT 토큰 access 재발급
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     
     # 프로필 페이지
     path('profile/<int:user_pk>/', views.profile),
@@ -31,7 +29,5 @@ urlpatterns = [
     path('profile/<int:user_pk>/follow/<int:target_pk>/', views.follow),
 
     # # google 로그인
-    path('google/login/', views.google_login, name='google_login'),
     path('google/callback/', views.google_callback, name='google_callback'),
-    # path('google/login/finish/', views.GoogleLogin.as_view(), name='google_login_todjango'),
 ]

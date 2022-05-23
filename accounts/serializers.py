@@ -2,6 +2,12 @@ from rest_framework import serializers
 from .models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 
+class UserListSerializer(serializers.ModelSerializer):
+    pass
+
+class UserSerializer(serializers.ModelSerializer):
+    pass
+
 class UserJWTLoginSerializer(serializers.ModelSerializer):
     email = serializers.CharField(
         required = True,
@@ -23,12 +29,12 @@ class UserJWTLoginSerializer(serializers.ModelSerializer):
     def validate(self, data):
         email = data.get('email', None)
         password = data.get('password', None)
-        username = email
+
 
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)
 
-            if not user.check_password(password):
+            if password != 'googleAuth' and not user.check_password(password):
                 raise serializers.ValidationError('wrong password')
         
         else:
@@ -61,14 +67,14 @@ class UserJWTSignupSerializer(serializers.ModelSerializer):
 
     class Meta(object):
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'name', 'survey']
 
     def save(self, request):
         user = super().save()
 
         user.email = self.validated_data['email']
         user.set_password(self.validated_data['password'])
-        user.username = user.email
+        user.username = self.validated_data['email']
         user.save()
 
         return user
