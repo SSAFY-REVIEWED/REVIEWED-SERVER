@@ -84,14 +84,18 @@ def main(request):
     results = {}
     for i in range(length):
         movie = movies[i]
-        rates = movie.rating_set.all()
-        genres = movie.survey_genre
-        if not rates:
-            rates = 0
-        if rates:
-            avg = sum(rates)/len(rates)
+        genres = movie.genres
+        ratings = movie.rating_set.all()
+        if ratings:
+            total = 0
+            for t in ratings:
+                total += t.score
+            ea = movie.rating_set.count()
+            if total:
+                avg = total / ea
         else:
-            avg = 0.0
+            avg = 0
+
         data = {
             'id': movie.id, 
             'title': movie.title,
