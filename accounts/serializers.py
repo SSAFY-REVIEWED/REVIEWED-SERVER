@@ -79,7 +79,6 @@ class UserJWTSignupSerializer(serializers.ModelSerializer):
         user.email = self.validated_data['email']
         user.set_password(self.validated_data['password'])
         user.username = self.validated_data['email']
-        user.survey_genre = '{status: False}'
         user.save()
 
         return user

@@ -42,17 +42,26 @@ def email_validate(request):
         data = {
             'message': "사용가능한 이메일 주소입니다."
         }
-        return JsonResponse(data, status=status.HTTP_202_ACCEPTED)
+        return Response(data, status=status.HTTP_202_ACCEPTED)
     else:
         data = {
             'message': "중복된 이메일이 존재합니다."
         }
-        return JsonResponse(data, status=status.HTTP_409_CONFLICT)
+        return Response(data, status=status.HTTP_409_CONFLICT)
 
 
 @api_view(['POST'])
 def survey(request):
-    pass
+    access_token = request.headers.get('Authorization', None)[7:]
+    payload = jwt.decode(access_token, verify=False)
+    user = User.objects.get(id=payload['user_id'])
+    survey = request.data['preferenceGenreList']
+    user.survey_genre = survey
+    user.save()
+    data = {
+            'message': "선호 장르 선택이 완료되었습니다."
+        }
+    return Response(data, status=status.HTTP_202_ACCEPTED)
 
 
 @api_view(['GET',])
@@ -62,7 +71,7 @@ def user_info(request):
         payload = jwt.decode(access_token, verify=False)
         user = User.objects.get(id=payload['user_id'])
         data = {
-            'name': user.first_name + user.last_name,
+            'name': user.name,
             'user_id': user.id,
             'profile_img': '/media/' + str(user.profile_img),
             'survey': user.survey_genre,
