@@ -15,6 +15,7 @@ urlpatterns = [
     path('login/', views.JWTLoginView.as_view()),
     path('signup/', views.JWTSignupView.as_view()),
     path('email/', views.email_validate),
+    path('survey', views.survey),
 
     # JWT 토큰 access 재발급
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

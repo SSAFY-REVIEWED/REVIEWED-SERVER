@@ -8,6 +8,10 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     pass
 
+
+class UserSerializer(serializers.ModelSerializer):
+    pass
+
 class UserJWTLoginSerializer(serializers.ModelSerializer):
     email = serializers.CharField(
         required = True,
@@ -67,7 +71,7 @@ class UserJWTSignupSerializer(serializers.ModelSerializer):
 
     class Meta(object):
         model = User
-        fields = ['email', 'password', 'name', 'survey']
+        fields = ['email', 'password', 'name']
 
     def save(self, request):
         user = super().save()

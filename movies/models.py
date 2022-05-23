@@ -21,15 +21,16 @@ class Movie(models.Model):
         AUTH_USER_MODEL,
         related_name='like_movies'
     )
-
-    genres = models.ManyToManyField(
-        Genre,
-        related_name='movies'
-    )
+    country = models.CharField(max_length=100)
+    screentime = models.IntegerField()
+    vote_average = models.DecimalField(max_digits=2, decimal_places=1)
+    genres = models.JSONField()
+    actors = models.JSONField()
+    directors = models.JSONField()
 
 
 class Rating(models.Model):
-    score = models.IntegerField()
+    score = models.DecimalField(max_digits=2, decimal_places=1)
 
     user = models.ForeignKey(
         AUTH_USER_MODEL, 

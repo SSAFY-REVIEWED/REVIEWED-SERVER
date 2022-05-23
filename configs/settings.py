@@ -176,7 +176,6 @@ AUTH_USER_MODEL = 'accounts.User'
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8080',
-    'http://localhost:8000',
 ]
 
 ACCOUNT_EMAIL_VERIFICATION = None
@@ -196,7 +195,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,

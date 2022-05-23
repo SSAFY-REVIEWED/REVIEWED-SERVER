@@ -30,8 +30,6 @@ urlpatterns = [
 
     path('api/v1/challenges/', include('challenges.urls')),
 
-    path('api/v1/casts/', include('casts.urls')),
-
     path('accounts/', include('dj_rest_auth.urls')),
     path('accounts/', include('allauth.urls')),
     path('accounts/', include('accounts.urls')),

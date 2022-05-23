@@ -9,8 +9,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
 from configs import settings
 from .models import User
-from .serializers import UserJWTSignupSerializer, UserJWTLoginSerializer
+from movies.models import Movie
+from .serializers import (
+    UserJWTSignupSerializer, 
+    UserJWTLoginSerializer,
+)
 import jwt
+
 
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/v1/google/callback/'
@@ -43,19 +48,11 @@ def email_validate(request):
             'message': "중복된 이메일이 존재합니다."
         }
         return JsonResponse(data, status=status.HTTP_409_CONFLICT)
-    
 
-@api_view(['GET',])
-def profile(request):
+
+@api_view(['POST'])
+def survey(request):
     pass
-
-
-@api_view(['GET',])
-def main(request):
-    data = {
-        'status': 'This is main page'
-    }
-    return Response(data)
 
 
 @api_view(['GET',])
@@ -68,11 +65,52 @@ def user_info(request):
             'name': user.first_name + user.last_name,
             'user_id': user.id,
             'profile_img': '/media/' + str(user.profile_img),
-            'survey': bool(user.survey),
+            'survey': user.survey_genre,
         }
         return Response(data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+'''
+------------------------------
+# 메인 페이지
+------------------------------
+'''
+
+@api_view(['GET',])
+def main(request):
+    movies = Movie.objects.all()
+    length = movies.count()
+    results = {}
+    for i in range(length):
+        movie = movies[i]
+        rates = movie.rating_set.all()
+        genres = movie.survey_genre
+        if not rates:
+            rates = 0
+        if rates:
+            avg = sum(rates)/len(rates)
+        else:
+            avg = 0.0
+        data = {
+            'id': movie.id, 
+            'title': movie.title,
+            'poster_url': 'https://image.tmdb.org/t/p/w500' + movie.poster_url,
+            'genres': genres,
+            'rates': avg,
+        }
+        results[i] = data
+    return Response(results, status=status.HTTP_200_OK)
+
+'''
+------------------------------
+# 프로필 페이지
+------------------------------
+'''
+
+@api_view(['GET',])
+def profile(request):
+    pass
 
 def history(request):
     return
@@ -91,6 +129,12 @@ def cancel(request):
 
 def follow(request):
     return
+
+'''
+------------------------------
+# JWT 인증 토큰 (로그인, 회원가입)
+------------------------------
+'''
 
 @permission_classes([AllowAny])
 class JWTSignupView(APIView):
@@ -142,7 +186,13 @@ class JWTLoginView(APIView):
             }
             return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
 
-            
+
+'''
+------------------------------
+# 구글 로그인 콜백 (로그인, 회원가입)
+------------------------------
+'''
+
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def google_callback(request):
