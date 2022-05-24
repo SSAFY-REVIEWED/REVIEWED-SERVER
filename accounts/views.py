@@ -40,14 +40,14 @@ def email_validate(request):
     email = request.data['email']
     if User.objects.filter(email=email).exists():
         data = {
-            'message': "사용가능한 이메일 주소입니다."
-        }
-        return Response(data, status=status.HTTP_202_ACCEPTED)
-    else:
-        data = {
             'message': "중복된 이메일이 존재합니다."
         }
         return Response(data, status=status.HTTP_409_CONFLICT)
+    else:
+        data = {
+            'message': "사용가능한 이메일 주소입니다."
+        }
+        return Response(data, status=status.HTTP_202_ACCEPTED)
 
 
 @api_view(['POST'])
