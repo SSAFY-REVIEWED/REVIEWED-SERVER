@@ -21,6 +21,10 @@ class Review(models.Model):
         on_delete=models.CASCADE,
     )
 
+    rate = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
+
+    likes = models.IntegerField(default=0)
+
     like_users = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='like_reviews'

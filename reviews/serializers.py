@@ -14,8 +14,6 @@ class ReviewListSerializer(serializers.ModelSerializer):
     userName = serializers.SerializerMethodField()
     posterUrl = serializers.SerializerMethodField()
     voteAverage = serializers.SerializerMethodField()
-    rate = serializers.SerializerMethodField()
-    likes = serializers.SerializerMethodField()
     like = serializers.SerializerMethodField()
     replyCount = serializers.SerializerMethodField()
 
@@ -49,16 +47,6 @@ class ReviewListSerializer(serializers.ModelSerializer):
     def get_voteAverage(self,  obj):
         movie = obj.movie
         return movie.vote_average
-
-    def get_rate(self,  obj):
-        user = obj.user
-        movie = obj.movie
-        rating = movie.rating_set.get(user_id=user.id)
-        return rating.score
-
-    def get_likes(self,  obj):
-        counts = obj.like_users.count()
-        return counts
 
     def get_like(self,  obj):
         user = obj.user

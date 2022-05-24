@@ -8,9 +8,8 @@ from .serializers import (
     ReviewListSerializer,
     CommentListSerializer
 )
-import jwt
+from accounts.views import get_user
 
-from reviews import serializers
 # Create your views here.
 @api_view(['GET', 'PATCH', 'DELETE'])
 def detail(request, review_pk):
@@ -24,9 +23,12 @@ def detail(request, review_pk):
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == 'PATCH':
         review = get_object_or_404(Review, pk=review_pk)
-        review.title = request.data['reviewTitle']
-        review.content = request.data['content']
-        review.spoiler = request.data['spoiler']
+        if request.data.get('reviewTitle'):
+            review.title = request.data['reviewTitle']
+        if request.data.get('content'):
+            review.content = request.data['content']
+        if request.data.get('spoiler'):
+            review.spoiler = request.data['spoiler']
         review.save()
         serializer = ReviewListSerializer(review)
         data = {
@@ -45,9 +47,7 @@ def detail(request, review_pk):
 
 @api_view(['POST'])
 def likes(request, review_pk):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
     review = get_object_or_404(Review, pk=review_pk)
     response = {
         'message': '좋아요',
@@ -57,18 +57,18 @@ def likes(request, review_pk):
     if review.like_users.filter(pk=user.id).exists():
         review.like_users.remove(user)
         response['message'] = '좋아요 취소'
+        review.likes -= 1
     else:
         review.like_users.add(user)
         response["liked"] = True
-
+        review.likes += 1
+    review.save()
     return Response(response, status=status.HTTP_200_OK)
 
 
 @api_view(['GET', 'POST'])
 def comments(request, review_pk):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
     review = get_object_or_404(Review, pk=review_pk)
     message = '덧글을 성공적으로 불러왔습니다.'
 

@@ -24,10 +24,12 @@ urlpatterns = [
     path('profile/<int:user_pk>/', views.profile),
     path('profile/<int:user_pk>/history/', views.history),
     path('profile/<int:user_pk>/reviews/', views.reviews),
+
+    # 팔로우/팔로잉
     path('profile/<int:user_pk>/following/', views.following),
     path('profile/<int:user_pk>/followed/', views.followed),
-    path('profile/<int:user_pk>/following/<int:target_pk>/', views.cancel),
-    path('profile/<int:user_pk>/follow/<int:target_pk>/', views.follow),
+    path('profile/<int:user_pk>/followed/<int:target_pk>/', views.cancel),
+    path('profile/<int:user_pk>/following/<int:target_pk>/', views.follow),
 
     # # google 로그인
     path('google/callback/', views.google_callback, name='google_callback'),

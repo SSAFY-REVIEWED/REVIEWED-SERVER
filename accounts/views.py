@@ -1,8 +1,9 @@
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -12,12 +13,45 @@ from movies.models import Movie
 from .serializers import (
     UserJWTSignupSerializer, 
     UserJWTLoginSerializer,
+    UserSerializer,
+    UserMiniSerializer
 )
+from reviews.serializers import ReviewListSerializer
 import jwt
+
+
 
 
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/v1/google/callback/'
+
+# 헤더에서 유저객체 가져오기
+def get_user(token):
+    access_token = token.get('Authorization', None)[7:]
+    payload = jwt.decode(access_token, verify=False)
+    user = User.objects.get(id=payload['user_id'])
+    return user
+
+# 레벨계산
+def level(exp):
+    if exp < 100:
+        return 'Iron', round((exp/100)*100, 1)
+    elif exp < 400:
+        return 'Bronze', round((exp-100)/600*100, 1)
+    elif exp < 1000:
+        return 'Silver', round((exp-1000)/1000*100, 1)
+    elif exp < 2000:
+        return 'Gold', round((exp-2000)/2000*100, 1)
+    elif exp < 4000:
+        return 'Platinum', round((exp-2000)/3000*100, 1)
+    elif exp < 7000:
+        return 'Diamond', round((exp-4000)/3000*100, 1)
+    elif exp < 12000:
+        return 'Master', round((exp-7000)/5000*100, 1)
+    elif exp < 20000:
+        return 'Grandmaster', round((exp-12000)/8000*100, 1)
+    elif exp >= 20000:
+        return 'Challenger', 100
 
 '''
 ------------------------------
@@ -25,43 +59,102 @@ GOOGLE_CALLBACK_URI = BASE_URL + 'api/v1/google/callback/'
 ------------------------------
 '''
 
-@api_view(['GET',])
+@api_view(['GET'])
 def user_info(request):
-    access_token = request.headers.get('Authorization', None)[7:]
-    if access_token:
-        payload = jwt.decode(access_token, verify=False)
-        user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
+    if user:
         data = {
             'name': user.name,
             'useId': user.id,
-            'profileImg': '/media/' + str(user.profile_img),
+            'profileImg': '/media/' + f'{user.profile_img}',
             'survey': user.survey_genre,
         }
         return Response(data)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET',])
-def profile(request):
-    pass
+
+@api_view(['GET', 'PATCH'])
+def profile(request, user_pk):
+    if request.method == 'GET':
+        user = get_object_or_404(User, pk=user_pk)
+        serializer = UserSerializer(user).data
+        lv, per = level(user.exp)
+        serializer['level'] = lv
+        serializer['levelImg'] = f'/media/{lv}.jpg'
+        serializer['levelPercentage'] = per
+        return Response(serializer, status=status.HTTP_200_OK)
+
+    elif request.method == 'PATCH':
+        user = get_object_or_404(User, pk=user_pk)
+        if request.data.get('name'):
+            user.name = request.data['name']
+        if request.data.get('profileImg'): 
+            user.profile_img = '/media/' + request.data['profileImg']
+        if request.data.get('bio'):
+            user.bio = request.data['bio']
+        user.save()
+        serializer = UserSerializer(user).data
+        lv, per = level(user.exp)
+        serializer['level'] = lv
+        serializer['levelImg'] = f'/media/{lv}.jpg'
+        serializer['levelPercentage'] = per
+        return Response(serializer, status=status.HTTP_200_OK)
+
 
 def history(request):
     return
 
-def reviews(request):
-    return
-    
-def following(request):
-    return
+@api_view(['GET'])
+def reviews(request, user_pk):
+    user = get_object_or_404(User, pk=user_pk)
+    reviews = user.review_set.all()
+    page = int(request.GET.get('page'))
+    paginator = Paginator(reviews, 10)
+    page_obj = paginator.get_page(page)
+    serializer = ReviewListSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'reviews': serializer.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)
 
-def followed(request):
-    return
+
+@api_view(['GET'])
+def following(request, user_pk):
+    user = get_object_or_404(User, pk=user_pk)
+    followings = user.followings.all()
+    serializers = UserMiniSerializer(followings, many=True).data
+    return Response(serializers, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def followed(request, user_pk):
+    user = get_object_or_404(User, pk=user_pk)
+    followers = user.followers.all()
+    serializers = UserMiniSerializer(followers, many=True).data
+    return Response(serializers, status=status.HTTP_200_OK)
 
 def cancel(request):
     return
 
-def follow(request):
-    return
+
+@api_view(['POST'])
+def follow(request, user_pk, target_pk):
+    target = get_object_or_404(User, pk=target_pk)
+    user = get_object_or_404(User, pk=user_pk)
+
+    response = {
+        "followed": False,
+    }
+
+    if target.followers.filter(pk=user.pk).exists():
+        target.followers.remove(user)
+    else:
+        target.followers.add(user)
+        response["followed"] = True
+
+    return Response(response, status=status.HTTP_200_OK)
 
 '''
 ------------------------------
@@ -95,9 +188,7 @@ def email_validate(request):
 
 @api_view(['POST'])
 def survey(request):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
     survey = request.data['preferenceGenreList']
     user.survey_genre = survey
     user.save()

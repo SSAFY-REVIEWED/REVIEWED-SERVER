@@ -2,15 +2,51 @@ from rest_framework import serializers
 from .models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 
-class UserListSerializer(serializers.ModelSerializer):
-    pass
+class UserMiniSerializer(serializers.ModelSerializer):
+    profileImg = serializers.ImageField(source="profile_img")
+    userId = serializers.IntegerField(source="id")
+
+    class Meta:
+        model = User
+        fields = (
+            'userId', 'name', 'profileImg',
+        )
 
 class UserSerializer(serializers.ModelSerializer):
-    pass
+    profileImg = serializers.ImageField(source="profile_img")
+    experience = serializers.IntegerField(source="exp")
 
+    reviewCount = serializers.SerializerMethodField()
+    followingCount = serializers.SerializerMethodField()
+    followedCount = serializers.SerializerMethodField()
+    follow = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
+    levelImg = serializers.SerializerMethodField()
+    levelPercentage = serializers.SerializerMethodField()
 
-class UserSerializer(serializers.ModelSerializer):
-    pass
+    class Meta:
+        model = User
+        fields = (
+            'name', 'profileImg', 'reviewCount', 'bio',
+            'followingCount', 'followedCount', 'follow',
+            'level', 'experience', 'levelImg', 'levelPercentage',
+        )
+    
+    def get_reviewCount(self,  obj):
+        return obj.review_set.count()
+    def get_followingCount(self,  obj):
+        return obj.followings.count()
+    def get_followedCount(self,  obj):
+        return obj.followers.count()
+    def get_follow(self,  obj):
+        return False
+    def get_level(self,  obj):
+        return 'Iron'
+    def get_levelImg(self,  obj):
+        return ''
+    def get_levelPercentage(self,  obj):
+        return 0
+
 
 class UserJWTLoginSerializer(serializers.ModelSerializer):
     email = serializers.CharField(

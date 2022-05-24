@@ -1,21 +1,19 @@
 from django.shortcuts import get_object_or_404
+from django.core.paginator import Paginator
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Movie, Rating
 from reviews.models import Review
-from accounts.models import User
 from rest_framework import status
-import jwt
 from reviews.serializers import (
     ReviewListSerializer,
 )
 from .serializers import MovieListSerializer
+from accounts.views import get_user
 
 @api_view(['GET',])
 def detail(request, movie_pk):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
     movie = get_object_or_404(Movie, pk=movie_pk)
 
     liked = False
@@ -25,8 +23,10 @@ def detail(request, movie_pk):
         movie.like_users.add(user)
         liked = True
 
-    rating = Rating.objects.get(user_id=user.id)
-    rate = rating.score if rating else 0
+    if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
+        rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
+    else: 
+        rate = 0
 
 
     serializer = MovieListSerializer(movie).data
@@ -41,9 +41,7 @@ def detail(request, movie_pk):
 
 @api_view(['POST'])
 def likes(request, movie_pk):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
     movie = get_object_or_404(Movie, pk=movie_pk)
     response = {
         'message': '좋아요',
@@ -61,17 +59,18 @@ def likes(request, movie_pk):
 
 @api_view(['POST'])
 def ratings(request, movie_pk):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
-
+    user = get_user(request.headers)
     movie = get_object_or_404(Movie, pk=movie_pk)
     rate = request.data['rate']
-    if Rating.objects.filter(user_id=user.id).exists():
-        rating = Rating.objects.filter(user_id=user.id)
+    if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
+        rating = Rating.objects.get(user_id=user.id, movie_id=movie.id)
         rating.delete()
 
     Rating.objects.create(score = rate, user=user, movie=movie)
+    if Review.objects.filter(user_id=user.id, movie_id=movie.id).exists():
+        tmp = Review.objects.get(user_id=user.id, movie_id=movie.id)
+        tmp.rate = rate
+        tmp.save()
 
     total = 0
     tmp = movie.rating_set.all()
@@ -89,22 +88,25 @@ def ratings(request, movie_pk):
 
 @api_view(['GET', 'POST'])
 def reviews(request, movie_pk):
-    access_token = request.headers.get('Authorization', None)[7:]
-    payload = jwt.decode(access_token, verify=False)
-    user = User.objects.get(id=payload['user_id'])
+    user = get_user(request.headers)
 
     if request.method == 'POST':
         movie = get_object_or_404(Movie, pk=movie_pk)
         review = Review.objects.create(user=user, movie=movie)
-        review.title = request.data['title']
+        review.title = request.data['reviewTitle']
         review.content = request.data['content']
         review.spoiler = request.data['spoiler']
+        if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
+            rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
+        else: 
+            rate = 0
+        review.rate = rate
         review.save()
         review = ReviewListSerializer(review).data
         message = '리뷰가 성공적으로 생성되었습니다.'
         stat = status.HTTP_201_CREATED
 
-    else:
+    elif request.method == 'GET':
         try:
             review = Review.objects.filter(user=user).order_by('-id')[0]
             review = ReviewListSerializer(review).data
@@ -114,8 +116,8 @@ def reviews(request, movie_pk):
             review = {}
             message = '리뷰를 성공적으로 로드 했습니다. 내가 작성한 리뷰 없음'
             stat = status.HTTP_200_OK
-
-    reviews = Review.objects.all().order_by('-id')[1:5]
+    
+    reviews = Review.objects.order_by('-id')
     reviews = ReviewListSerializer(reviews, many=True).data
     data = {
         'review': review,
@@ -123,3 +125,55 @@ def reviews(request, movie_pk):
         'message': message
     }
     return Response(data, status=stat)
+
+@api_view(['GET'])
+def paginator_late(request, movie_pk, page):
+    reviews = Review.objects.order_by('-created_at')
+    paginator = Paginator(reviews, 10)
+    page_obj = paginator.get_page(page)
+    serializer = ReviewListSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'reviews': serializer.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def paginator_rate_high(request, movie_pk, page):
+    reviews = Review.objects.order_by('-rate')
+    paginator = Paginator(reviews, 10)
+    page_obj = paginator.get_page(page)
+    serializer = ReviewListSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'reviews': serializer.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def paginator_rate_low(request, movie_pk, page):
+    reviews = Review.objects.order_by('rate')
+    paginator = Paginator(reviews, 10)
+    page_obj = paginator.get_page(page)
+    serializer = ReviewListSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'reviews': serializer.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def paginator_likes(request, movie_pk, page):
+    reviews = Review.objects.order_by('likes')
+    paginator = Paginator(reviews, 10)
+    page_obj = paginator.get_page(page)
+    serializer = ReviewListSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'reviews': serializer.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)

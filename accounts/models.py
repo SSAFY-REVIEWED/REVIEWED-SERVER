@@ -8,3 +8,4 @@ class User(AbstractUser):
     exp = models.IntegerField(default=0)
     bio = models.TextField(max_length=100, null=True)
     survey_genre = models.JSONField(default=dict)
+    followings = models.ManyToManyField('self', symmetrical=False, related_name='followers')
