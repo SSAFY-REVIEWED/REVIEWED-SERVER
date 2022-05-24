@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from .models import Movie, Rating
 from reviews.models import Review
 from accounts.models import User
-from .serializers import MovieSerializer
 from rest_framework import status
 import jwt
 from reviews.serializers import (
-    ReviewListSerializer
+    ReviewListSerializer,
 )
+from .serializers import MovieListSerializer
 
 @api_view(['GET',])
 def detail(request, movie_pk):
@@ -17,20 +17,6 @@ def detail(request, movie_pk):
     payload = jwt.decode(access_token, verify=False)
     user = User.objects.get(id=payload['user_id'])
     movie = get_object_or_404(Movie, pk=movie_pk)
-    ratings = movie.rating_set.all()
-    rate = 0
-    if ratings:
-        if ratings.filter(user_id=user.id).exists():
-            rating = Rating.objects.get(user_id=user.id)
-            rate = rating.score
-        total = 0
-        for t in ratings:
-            total += t.score
-        ea = movie.rating_set.count()
-        if total:
-            avg = total / ea
-    else:
-        avg = 0
 
     liked = False
     if movie.like_users.filter(pk=user.id).exists():
@@ -39,25 +25,16 @@ def detail(request, movie_pk):
         movie.like_users.add(user)
         liked = True
 
-    movie = MovieSerializer(movie).data
-    moviedata = {
-        'movieId': movie['id'], 
-        'title': movie['title'],
-        'releaseDate': movie['release_date'],
-        'posterUrl': 'https://image.tmdb.org/t/p/w500' + movie['poster_url'],
-        'genres': movie['genres'],
-        'actors': movie['actors'],
-        'country': movie['country'],
-        'directors': movie['directors'],
-        'screenTime': movie['screentime'],
-        'overview': movie['overview'],
-        'voteAverage': avg,
-        'rate': rate,
-        'like': liked,
-        }
+    rating = Rating.objects.get(user_id=user.id)
+    rate = rating.score if rating else 0
+
+
+    serializer = MovieListSerializer(movie).data
+    serializer['rate'] = rate
+    serializer['like'] = liked
 
     data = {
-        'movieData': moviedata,
+        'movieData': serializer,
         'message': '영화를 불러왔습니다.'
     }
     return Response(data, status=status.HTTP_200_OK)

@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -7,7 +7,6 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
-from configs import settings
 from .models import User
 from movies.models import Movie
 from .serializers import (
@@ -20,18 +19,62 @@ import jwt
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/v1/google/callback/'
 
-# Create your views here.
-@api_view(['GET',])
-@permission_classes([AllowAny])
-def intro(request):
-    return render(request, 'accounts/index.html')
+'''
+------------------------------
+# 프로필 페이지
+------------------------------
+'''
 
 @api_view(['GET',])
-@permission_classes([AllowAny])
-def google_login(request):
-    scope = "https://www.googleapis.com/auth/userinfo.email " + "https://www.googleapis.com/auth/userinfo.profile"
-    client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-    return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
+def user_info(request):
+    access_token = request.headers.get('Authorization', None)[7:]
+    if access_token:
+        payload = jwt.decode(access_token, verify=False)
+        user = User.objects.get(id=payload['user_id'])
+        data = {
+            'name': user.name,
+            'useId': user.id,
+            'profileImg': '/media/' + str(user.profile_img),
+            'survey': user.survey_genre,
+        }
+        return Response(data)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET',])
+def profile(request):
+    pass
+
+def history(request):
+    return
+
+def reviews(request):
+    return
+    
+def following(request):
+    return
+
+def followed(request):
+    return
+
+def cancel(request):
+    return
+
+def follow(request):
+    return
+
+'''
+------------------------------
+# 로그인, 회원가입, 서베이
+------------------------------
+'''
+
+# @api_view(['GET',])
+# @permission_classes([AllowAny])
+# def google_login(request):
+#     scope = "https://www.googleapis.com/auth/userinfo.email " + "https://www.googleapis.com/auth/userinfo.profile"
+#     client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
+#     return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
 
 
 @api_view(['GET','POST'])
@@ -63,28 +106,15 @@ def survey(request):
         }
     return Response(data, status=status.HTTP_202_ACCEPTED)
 
-
-@api_view(['GET',])
-def user_info(request):
-    access_token = request.headers.get('Authorization', None)[7:]
-    if access_token:
-        payload = jwt.decode(access_token, verify=False)
-        user = User.objects.get(id=payload['user_id'])
-        data = {
-            'name': user.name,
-            'useId': user.id,
-            'profileImg': '/media/' + str(user.profile_img),
-            'survey': user.survey_genre,
-        }
-        return Response(data)
-    else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
 '''
 ------------------------------
 # 메인 페이지
 ------------------------------
 '''
+@api_view(['GET',])
+@permission_classes([AllowAny])
+def intro(request):
+    return render(request, 'accounts/index.html')
 
 @api_view(['GET',])
 def main(request):
@@ -114,34 +144,6 @@ def main(request):
         }
         results[i] = data
     return Response(results, status=status.HTTP_200_OK)
-
-'''
-------------------------------
-# 프로필 페이지
-------------------------------
-'''
-
-@api_view(['GET',])
-def profile(request):
-    pass
-
-def history(request):
-    return
-
-def reviews(request):
-    return
-    
-def following(request):
-    return
-
-def followed(request):
-    return
-
-def cancel(request):
-    return
-
-def follow(request):
-    return
 
 '''
 ------------------------------
@@ -198,7 +200,6 @@ class JWTLoginView(APIView):
                 'message': '아이디 또는 비밀번호를 확인해주세요'
             }
             return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
-
 
 '''
 ------------------------------
