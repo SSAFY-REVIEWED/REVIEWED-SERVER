@@ -34,7 +34,7 @@ def google_login(request):
     return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
 
 
-@api_view(['GET',])
+@api_view(['GET','POST'])
 @permission_classes([AllowAny])
 def email_validate(request):
     email = request.data['email']
@@ -72,8 +72,8 @@ def user_info(request):
         user = User.objects.get(id=payload['user_id'])
         data = {
             'name': user.name,
-            'user_id': user.id,
-            'profile_img': '/media/' + str(user.profile_img),
+            'useId': user.id,
+            'profileImg': '/media/' + str(user.profile_img),
             'survey': user.survey_genre,
         }
         return Response(data)
@@ -108,7 +108,7 @@ def main(request):
         data = {
             'id': movie.id, 
             'title': movie.title,
-            'poster_url': 'https://image.tmdb.org/t/p/w500' + movie.poster_url,
+            'posteUrl': 'https://image.tmdb.org/t/p/w500' + movie.poster_url,
             'genres': genres,
             'rates': avg,
         }
@@ -195,7 +195,7 @@ class JWTLoginView(APIView):
             return JsonResponse(data, status=status.HTTP_202_ACCEPTED)
         else:
             data = {
-                'message': serializer.errors
+                'message': '아이디 또는 비밀번호를 확인해주세요'
             }
             return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
 
@@ -217,7 +217,7 @@ def google_callback(request):
     profile_data = {
         'email': user_data.get('email', ''),
         'name': user_data.get('name', ''),
-        'profile_img': user_data.get('picture', None),
+        'profileImg': user_data.get('picture', None),
         'password': 'googleAuth'
         }
 

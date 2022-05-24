@@ -2,11 +2,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Movie, Rating
+from reviews.models import Review
 from accounts.models import User
 from .serializers import MovieSerializer
 from rest_framework import status
 import jwt
-
+from reviews.serializers import (
+    ReviewListSerializer
+)
 
 @api_view(['GET',])
 def detail(request, movie_pk):
@@ -37,7 +40,7 @@ def detail(request, movie_pk):
         liked = True
 
     movie = MovieSerializer(movie).data
-    movieData = {
+    moviedata = {
         'movieId': movie['id'], 
         'title': movie['title'],
         'releaseDate': movie['release_date'],
@@ -54,7 +57,7 @@ def detail(request, movie_pk):
         }
 
     data = {
-        'movieData': movieData,
+        'movieData': moviedata,
         'message': '영화를 불러왔습니다.'
     }
     return Response(data, status=status.HTTP_200_OK)
@@ -106,6 +109,40 @@ def ratings(request, movie_pk):
     }
     return Response(context, status=status.HTTP_200_OK)
 
+
+@api_view(['GET', 'POST'])
 def reviews(request, movie_pk):
-    # 리뷰 리스트 내거 상단 + 다른사람리뷰 (좋아요 순 4개)
-    pass
+    access_token = request.headers.get('Authorization', None)[7:]
+    payload = jwt.decode(access_token, verify=False)
+    user = User.objects.get(id=payload['user_id'])
+
+    if request.method == 'POST':
+        movie = get_object_or_404(Movie, pk=movie_pk)
+        review = Review.objects.create(user=user, movie=movie)
+        review.title = request.data['title']
+        review.content = request.data['content']
+        review.spoiler = request.data['spoiler']
+        review.save()
+        review = ReviewListSerializer(review).data
+        message = '리뷰가 성공적으로 생성되었습니다.'
+        stat = status.HTTP_201_CREATED
+
+    else:
+        try:
+            review = Review.objects.filter(user=user).order_by('-id')[0]
+            review = ReviewListSerializer(review).data
+            message = '리뷰를 성공적으로 로드 했습니다.'
+            stat = status.HTTP_200_OK
+        except:
+            review = {}
+            message = '리뷰를 성공적으로 로드 했습니다. 내가 작성한 리뷰 없음'
+            stat = status.HTTP_200_OK
+
+    reviews = Review.objects.all().order_by('-id')[1:5]
+    reviews = ReviewListSerializer(reviews, many=True).data
+    data = {
+        'review': review,
+        'reviews': reviews,
+        'message': message
+    }
+    return Response(data, status=stat)
