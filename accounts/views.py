@@ -20,8 +20,6 @@ from reviews.serializers import ReviewListSerializer
 import jwt
 
 
-
-
 BASE_URL = 'http://127.0.0.1:8000/'
 GOOGLE_CALLBACK_URI = BASE_URL + 'api/v1/google/callback/'
 
@@ -66,7 +64,7 @@ def user_info(request):
         data = {
             'name': user.name,
             'userId': user.id,
-            'profileImg': '/media/' + f'{user.profile_img}',
+            'profileImg': f'/media/{user.profile_img}',
             'survey': user.survey_genre,
         }
         return Response(data)
@@ -89,8 +87,8 @@ def profile(request, user_pk):
         user = get_object_or_404(User, pk=user_pk)
         if request.data.get('name'):
             user.name = request.data['name']
-        if request.data.get('profileImg'): 
-            user.profile_img = '/media/' + request.data['profileImg']
+        if request.FILES.get('profileImg'): 
+            user.profile_img = request.FILES['profileImg']
         if request.data.get('bio'):
             user.bio = request.data['bio']
         user.save()

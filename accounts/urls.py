@@ -31,6 +31,6 @@ urlpatterns = [
     path('profile/<int:user_pk>/followed/<int:target_pk>/', views.cancel),
     path('profile/<int:user_pk>/following/<int:target_pk>/', views.follow),
 
-    # # google 로그인
+    # google 로그인
     path('google/callback/', views.google_callback, name='google_callback'),
 ]
