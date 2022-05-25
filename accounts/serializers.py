@@ -34,16 +34,22 @@ class UserSerializer(serializers.ModelSerializer):
     
     def get_reviewCount(self,  obj):
         return obj.review_set.count()
+        
     def get_followingCount(self,  obj):
         return obj.followings.count()
+
     def get_followedCount(self,  obj):
         return obj.followers.count()
+
     def get_follow(self,  obj):
         return False
+
     def get_level(self,  obj):
         return 'Iron'
+
     def get_levelImg(self,  obj):
         return ''
+
     def get_levelPercentage(self,  obj):
         return 0
 

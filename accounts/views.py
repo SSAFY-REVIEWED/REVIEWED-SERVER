@@ -9,16 +9,18 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
 from .models import User
-from movies.models import Movie
+from movies.models import Movie, Genre
+from reviews.models import Review
 from .serializers import (
     UserJWTSignupSerializer, 
     UserJWTLoginSerializer,
     UserSerializer,
     UserMiniSerializer
 )
-from movies.serializers import RatingSerializer
-from reviews.serializers import ReviewListSerializer
+from movies.serializers import RatingSerializer, GenreListSerializer
+from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
 import jwt
+
 
 
 BASE_URL = 'http://127.0.0.1:8000/'
@@ -100,9 +102,55 @@ def profile(request, user_pk):
         serializer['levelPercentage'] = per
         return Response(serializer, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+def history(request, user_pk):
+    # value = [ 
+    #   { date: "2021-09-01", count: 1 }
+    #   ...
+    # ]
+    value = []
+    value2 = []
+    value3 = []
+    cal = {}
+    all_genres = {
+        "모험": 0, "판타지": 0, "애니메이션": 0, "드라마": 0, "공포": 0,
+        "액션": 0, "코미디": 0, "역사": 0, "서부": 0, "스릴러": 0,
+        "범죄": 0, "다큐멘터리": 0, "SF": 0, "미스터리": 0, "음악": 0,
+        "로맨스": 0, "가족": 0, "전쟁": 0, "TV 영화": 0
+    }
+    user = get_object_or_404(User, pk=user_pk)
+    reviews = user.review_set.all()
+    dates = ReviewDateSerializer(reviews, many=True).data
+    genres = ReviewGenreSerializer(reviews, many=True).data
+    challenge = user.completed_challenges.all()
+    for c in challenge:
+        value3.append(c.name)
+    for date in dates:
+        key = date['createdAt']
+        try: cal[key] += 1
+        except: cal[key] = 1
+    for k, v in cal.items():
+        tmp = dict()
+        tmp['date'] = k
+        tmp['count'] = v
+        value.append(tmp)
+    for genre in genres:
+        for i in genre['genres']:
+            all_genres[i] += 1
+    for k, v in all_genres.items():
+        tmp = dict()
+        tmp['genre'] = k
+        tmp['count'] = v
+        value2.append(tmp)
 
-def history(request):
-    return
+    data = {
+        'reviewDateCountList': value,
+        'reviewGenreCountList': value2,
+        'Challenges': value3,
+    }
+    
+
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -151,7 +199,9 @@ def followed(request, user_pk):
     serializers = UserMiniSerializer(followers, many=True).data
     return Response(serializers, status=status.HTTP_200_OK)
 
-def cancel(request):
+def cancel(request, user_pk, target_pk):
+    target = get_object_or_404(User, pk=target_pk)
+    user = get_object_or_404(User, pk=user_pk)
     return
 
 
@@ -215,13 +265,28 @@ def survey(request):
 
 '''
 ------------------------------
-# 메인 페이지
+# 메인 페이지, 서치, 랭킹
 ------------------------------
 '''
+
 @api_view(['GET',])
 @permission_classes([AllowAny])
 def intro(request):
     return
+
+
+@api_view(['GET',])
+def search(request):
+    target = request.data.get('query')
+    movies = Movie.objects.all().filter(subject__contains=f'{target}')
+    users = User.objects.all().filter(subject__contains=f'{target}')
+    return
+
+
+@api_view(['GET',])
+def ranking(request):
+    return 
+
 
 @api_view(['GET',])
 def main(request):

@@ -10,7 +10,6 @@ from .serializers import (
 )
 from accounts.views import get_user
 
-# Create your views here.
 @api_view(['GET', 'PATCH', 'DELETE'])
 def detail(request, review_pk):
     if request.method == 'GET':

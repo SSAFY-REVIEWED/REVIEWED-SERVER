@@ -6,7 +6,7 @@ from movies.models import Movie
 # Create your models here.
 class Challenge(models.Model):
     name = models.CharField(max_length=100)
-    reward = models.IntegerField()
+    reward = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     completed_users = models.ManyToManyField(

@@ -1,3 +1,4 @@
+from dataclasses import field
 from rest_framework import serializers
 from .models import Review, Comment
 
@@ -80,8 +81,39 @@ class CommentListSerializer(serializers.ModelSerializer):
 
     def get_userProfileImg(self,  obj):
         user = obj.user
-        return f'{user.profile_img}'
+        return f'/media/{user.profile_img}'
     
     def get_userName(self,  obj):
         user = obj.user
         return f'{user.name}'
+
+
+class ReviewDateSerializer(serializers.ModelSerializer):
+
+    createdAt = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ('createdAt',)
+
+    def get_createdAt(self,  obj):
+        date = str(obj.created_at)
+
+        return date[:10]
+
+class ReviewGenreSerializer(serializers.ModelSerializer):
+
+    genres = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = ('genres',)
+
+    def get_genres(self,  obj):
+        tmp = []
+        movie = obj.movie
+        genres = movie.genres
+        for genre in genres:
+            tmp.append(genre['name'])
+        return tmp
+

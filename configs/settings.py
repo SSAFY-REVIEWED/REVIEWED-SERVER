@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'accounts',
     'movies',
     'reviews',
+    'challenges',
 
     'rest_framework',
     'rest_framework.authtoken',

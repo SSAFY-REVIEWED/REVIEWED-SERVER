@@ -8,14 +8,17 @@ urlpatterns = [
 
     # 로그인 한 사용자 첫화면 (메인)
     path('main/', views.main),
+    
     # 유저정보
     path('user-info/', views.user_info),
+    path('survey/', views.survey),
+    path('search/', views.search),
+    path('ranking/', views.ranking),
 
     # 로그인, 회원가입
     path('login/', views.JWTLoginView.as_view()),
     path('signup/', views.JWTSignupView.as_view()),
     path('email/', views.email_validate),
-    path('survey/', views.survey),
 
     # JWT 토큰 access 재발급
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -24,7 +27,7 @@ urlpatterns = [
     path('profile/<int:user_pk>/', views.profile),
     path('profile/<int:user_pk>/history/', views.history),
     path('profile/<int:user_pk>/reviews/', views.reviews),
-    path('profile/<int:user_pk>/movies/', views.movies),
+    path('profile/<int:user_pk>/movies/', views.reviews),
 
     # 팔로우/팔로잉
     path('profile/<int:user_pk>/following/', views.following),

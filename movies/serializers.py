@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Movie, Rating
+from .models import Movie, Rating, Genre 
 
 class MovieSerializer(serializers.ModelSerializer):
     
@@ -72,3 +72,11 @@ class MovieListSerializer(serializers.ModelSerializer):
 
     def get_like(self,  obj):
         return ''
+
+class GenreListSerializer(serializers.ModelSerializer):
+    genre = serializers.CharField(source="name")
+
+    class Meta():
+        model = Genre 
+        fields = ('genre',)
+
