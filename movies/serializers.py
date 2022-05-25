@@ -73,10 +73,39 @@ class MovieListSerializer(serializers.ModelSerializer):
     def get_like(self,  obj):
         return ''
 
-class GenreListSerializer(serializers.ModelSerializer):
-    genre = serializers.CharField(source="name")
+class MovieMainSerializer(serializers.ModelSerializer):
 
+    movieId= serializers.SerializerMethodField()
+    movieTitle = serializers.SerializerMethodField()
+    posterUrl = serializers.SerializerMethodField()
+    voteAverage = serializers.SerializerMethodField()
+    like = serializers.SerializerMethodField()
+    
     class Meta():
-        model = Genre 
-        fields = ('genre',)
+        model = Movie 
+        fields = ('movieId', 'movieTitle', 'posterUrl', 'genres', 'voteAverage', 'like')
 
+    def get_movieId(self,  obj):
+        return obj.id
+
+    def get_movieTitle(self,  obj):
+        return obj.title
+
+    def get_voteAverage(self,  obj):
+        ratings = obj.rating_set.all()
+        if ratings:
+            total = 0
+            for rating in ratings:
+                total += rating.score
+            ea = obj.rating_set.count()
+            if total:
+                avg = total / ea
+        else:
+            avg = 0.0
+        return round(avg, 1)
+
+    def get_posterUrl(self,  obj):
+        return f'https://image.tmdb.org/t/p/w500{obj.poster_url}'
+
+    def get_like(self,  obj):
+        return ''

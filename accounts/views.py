@@ -9,15 +9,16 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
 from .models import User
-from movies.models import Movie, Genre
+from movies.models import Movie
 from reviews.models import Review
 from .serializers import (
     UserJWTSignupSerializer, 
     UserJWTLoginSerializer,
     UserSerializer,
-    UserMiniSerializer
+    UserMiniSerializer,
+    UserSearchSerializer
 )
-from movies.serializers import RatingSerializer, GenreListSerializer
+from movies.serializers import RatingSerializer, MovieMainSerializer
 from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
 import jwt
 
@@ -202,7 +203,11 @@ def followed(request, user_pk):
 def cancel(request, user_pk, target_pk):
     target = get_object_or_404(User, pk=target_pk)
     user = get_object_or_404(User, pk=user_pk)
-    return
+    user.followers.remove(target)
+    response = {
+        "message": '팔로우중인 유저를 삭제하였습니다',
+    }
+    return Response(response, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -277,10 +282,29 @@ def intro(request):
 
 @api_view(['GET',])
 def search(request):
-    target = request.data.get('query')
-    movies = Movie.objects.all().filter(subject__contains=f'{target}')
-    users = User.objects.all().filter(subject__contains=f'{target}')
-    return
+    user = get_user(request.headers)
+    query = request.GET.get('query')
+    type = request.GET.get('type')
+    if type == 'movies':
+        movies = Movie.objects.filter(title__icontains=query)
+        serializers = MovieMainSerializer(movies, many=True).data
+        for movie in serializers:
+            m_id = movie.get('movieId')
+            tmp = Movie.objects.get(pk=m_id)
+            liked = False
+            if tmp.like_users.filter(pk=user.id).exists():
+                liked = True
+            movie['like'] = liked
+        return Response(serializers, status=status.HTTP_200_OK)
+    elif type == 'users':
+        targets = User.objects.filter(name__icontains=query)
+        serializers = UserSearchSerializer(targets, many=True).data
+        for target in serializers:
+            t_id = target.get('userId')
+            tmp = get_object_or_404(User, pk=t_id)
+            if tmp.followers.filter(pk=user.id).exists():
+                target['follow'] = True
+        return Response(serializers, status=status.HTTP_200_OK)
 
 
 @api_view(['GET',])
@@ -290,32 +314,17 @@ def ranking(request):
 
 @api_view(['GET',])
 def main(request):
+    user = get_user(request.headers)
     movies = Movie.objects.all()
-    length = movies.count()
-    results = {}
-    for i in range(length):
-        movie = movies[i]
-        genres = movie.genres
-        ratings = movie.rating_set.all()
-        if ratings:
-            total = 0
-            for t in ratings:
-                total += t.score
-            ea = movie.rating_set.count()
-            if total:
-                avg = total / ea
-        else:
-            avg = 0
-
-        data = {
-            'id': movie.id, 
-            'title': movie.title,
-            'posteUrl': 'https://image.tmdb.org/t/p/w500' + movie.poster_url,
-            'genres': genres,
-            'rates': avg,
-        }
-        results[i] = data
-    return Response(results, status=status.HTTP_200_OK)
+    serializers = MovieMainSerializer(movies, many=True).data
+    for movie in serializers:
+        m_id = movie.get('movieId')
+        tmp = Movie.objects.get(pk=m_id)
+        liked = False
+        if tmp.like_users.filter(pk=user.id).exists():
+            liked = True
+        movie['like'] = liked
+    return Response(serializers, status=status.HTTP_200_OK)
 
 '''
 ------------------------------

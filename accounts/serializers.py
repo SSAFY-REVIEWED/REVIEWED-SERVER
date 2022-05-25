@@ -12,6 +12,26 @@ class UserMiniSerializer(serializers.ModelSerializer):
             'userId', 'name', 'profileImg',
         )
 
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    profileImg = serializers.ImageField(source="profile_img")
+    userId = serializers.IntegerField(source="id")
+    userName = serializers.CharField(source="name")
+
+    follow = serializers.SerializerMethodField()
+    reviewCount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('userId', 'userName', 'profileImg', 'follow', 'reviewCount')
+    
+    def get_follow(self,  obj):
+        return False
+
+    def get_reviewCount(self,  obj):
+        return obj.review_set.count()
+
+
 class UserSerializer(serializers.ModelSerializer):
     profileImg = serializers.ImageField(source="profile_img")
     experience = serializers.IntegerField(source="exp")
