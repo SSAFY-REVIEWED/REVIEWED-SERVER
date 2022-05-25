@@ -10,7 +10,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from accounts.models import User
 from movies.models import Movie
-from reviews.models import Review
 from .serializers import (
     UserJWTSignupSerializer, 
     UserJWTLoginSerializer,
@@ -22,6 +21,7 @@ from .serializers import (
 from movies.serializers import RatingSerializer, MovieMainSerializer
 from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
 import jwt
+import random
 
 
 BASE_URL = 'http://127.0.0.1:8000/'
@@ -105,10 +105,6 @@ def profile(request, user_pk):
 
 @api_view(['GET'])
 def history(request, user_pk):
-    # value = [ 
-    #   { date: "2021-09-01", count: 1 }
-    #   ...
-    # ]
     value = []
     value2 = []
     value3 = []
@@ -149,7 +145,6 @@ def history(request, user_pk):
         'reviewGenreCountList': value2,
         'Challenges': value3,
     }
-    
 
     return Response(data, status=status.HTTP_200_OK)
 
@@ -232,14 +227,6 @@ def follow(request, user_pk, target_pk):
 # 로그인, 회원가입, 서베이
 ------------------------------
 '''
-
-# @api_view(['GET',])
-# @permission_classes([AllowAny])
-# def google_login(request):
-#     scope = "https://www.googleapis.com/auth/userinfo.email " + "https://www.googleapis.com/auth/userinfo.profile"
-#     client_id = settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-#     return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
-
 
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
@@ -324,7 +311,8 @@ def ranking(request):
 @api_view(['GET',])
 def main(request):
     user = get_user(request.headers)
-    movies = Movie.objects.all()
+    x = random.randrange(0, 1000)
+    movies = Movie.objects.all()[x:x+10]
     serializers = MovieMainSerializer(movies, many=True).data
     for movie in serializers:
         m_id = movie.get('movieId')

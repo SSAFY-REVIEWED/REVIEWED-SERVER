@@ -17,19 +17,25 @@ def challenges(request):
     data = []
     for challenge in challenges:
         tmp = {
+            'name': challenge.name,
             'completed': False,
             'movie_list': dict(),
+            'progress': 0,
         }
         movies = challenge.listed_movies.all()
         length = len(movies)
+        count = 0
         movies_list = MovieChallengerSerializer(movies, many=True).data
         if challenge.completed_users.filter(pk=user.id):
             tmp['completed'] = True
         else:
             for i in range(length):
-                if not movies[i].rating_set.filter(user=user).exists():
+                if not movies[i].review_set.filter(user=user).exists():
                     movies_list[i]['reviewed'] = False
+                else:
+                    count += 1
         tmp['movie_list'] = movies_list
+        tmp['progress'] = round(count / length)
         data.append(tmp)
     context = {
         'challenges': data,
@@ -51,7 +57,6 @@ def edit(request):
         reward = request.data['reward']
         mm = request.data['movies']
         movies = list(map(int, mm.split(' ')))
-        print(movies)
         challenge = Challenge.objects.create()
         challenge.name = name
         challenge.reward = reward

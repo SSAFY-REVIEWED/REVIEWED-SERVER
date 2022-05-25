@@ -18,9 +18,6 @@ def detail(request, movie_pk):
 
     liked = False
     if movie.like_users.filter(pk=user.id).exists():
-        movie.like_users.remove(user)
-    else:
-        movie.like_users.add(user)
         liked = True
 
     if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
@@ -90,11 +87,15 @@ def ratings(request, movie_pk):
 def reviews(request, movie_pk):
     user = get_user(request.headers)
     movie = get_object_or_404(Movie, pk=movie_pk)
+    liked = False
+    if movie.like_users.filter(pk=user.id).exists():
+        liked = True
     if request.method == 'POST':
         review = Review.objects.create(user=user, movie=movie)
         review.title = request.data['reviewTitle']
         review.content = request.data['content']
         review.spoiler = request.data['spoiler']
+        review.like = liked
         if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
             rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
         else: 

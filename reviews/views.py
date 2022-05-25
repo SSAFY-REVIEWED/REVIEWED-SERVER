@@ -14,6 +14,8 @@ from accounts.views import get_user
 def detail(request, review_pk):
     if request.method == 'GET':
         review = get_object_or_404(Review, pk=review_pk)
+        review.views += 1
+        review.save()
         serializer = ReviewListSerializer(review)
         data = {
             'review': serializer.data,
