@@ -6,13 +6,36 @@ from .serializers import ChallengeSerializer
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import status
+from accounts.views import get_user
+from .serializers import MovieChallengerSerializer
+from rest_framework.response import Response
 
 @api_view(['GET'])
 def challenges(request):
+    user = get_user(request.headers)
     challenges = Challenge.objects.all()
+    data = []
     for challenge in challenges:
-        pass
-
+        tmp = {
+            'completed': False,
+            'movie_list': dict(),
+        }
+        movies = challenge.listed_movies.all()
+        length = len(movies)
+        movies_list = MovieChallengerSerializer(movies, many=True).data
+        if challenge.completed_users.filter(pk=user.id):
+            tmp['completed'] = True
+        else:
+            for i in range(length):
+                if not movies[i].rating_set.filter(user=user).exists():
+                    movies_list[i]['reviewed'] = False
+        tmp['movie_list'] = movies_list
+        data.append(tmp)
+    context = {
+        'challenges': data,
+        'message': '챌린지 리스트를 성공적으로 불러왔습니다.'
+    }
+    return Response(context, status=status.HTTP_200_OK)
 
 
 @permission_classes([AllowAny])
@@ -62,4 +85,3 @@ def edit(request):
             'message': '성공적으로 삭제되었습니다.'
         }
         return Response(data, status=status.HTTP_200_OK)
-

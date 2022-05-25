@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Movie, Rating, Genre 
+from .models import Movie, Rating, Genre
+from django.db.models import Avg
 
 class MovieSerializer(serializers.ModelSerializer):
     
@@ -53,16 +54,10 @@ class MovieListSerializer(serializers.ModelSerializer):
 
     def get_voteAverage(self,  obj):
         ratings = obj.rating_set.all()
-        if ratings:
-            total = 0
-            for rating in ratings:
-                total += rating.score
-            ea = obj.rating_set.count()
-            if total:
-                avg = total / ea
-        else:
-            avg = 0.0
-        return round(avg, 1)
+        tmp = ratings.all().aggregate(a=Avg('score'))
+        if not tmp['a']:
+            tmp['a'] = 0.0
+        return tmp['a']
 
     def get_posterUrl(self,  obj):
         return f'https://image.tmdb.org/t/p/w500{obj.poster_url}'
@@ -93,16 +88,10 @@ class MovieMainSerializer(serializers.ModelSerializer):
 
     def get_voteAverage(self,  obj):
         ratings = obj.rating_set.all()
-        if ratings:
-            total = 0
-            for rating in ratings:
-                total += rating.score
-            ea = obj.rating_set.count()
-            if total:
-                avg = total / ea
-        else:
-            avg = 0.0
-        return round(avg, 1)
+        tmp = ratings.aggregate(a=Avg('score'))
+        if not tmp['a']:
+            tmp['a'] = 0.0
+        return tmp['a']
 
     def get_posterUrl(self,  obj):
         return f'https://image.tmdb.org/t/p/w500{obj.poster_url}'

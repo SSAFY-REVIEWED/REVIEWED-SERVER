@@ -1,6 +1,7 @@
 from dataclasses import field
 from rest_framework import serializers
 from .models import Review, Comment
+from django.db.models import Avg
 
 class ReviewListSerializer(serializers.ModelSerializer):
     reviewId = serializers.IntegerField(source="id")
@@ -47,7 +48,10 @@ class ReviewListSerializer(serializers.ModelSerializer):
 
     def get_voteAverage(self,  obj):
         movie = obj.movie
-        return movie.vote_average
+        tmp = movie.rating_set.all().aggregate(a=Avg('score'))
+        if not tmp['a']:
+            tmp['a'] = 0.0
+        return tmp['a']
 
     def get_like(self,  obj):
         user = obj.user

@@ -7,8 +7,8 @@ from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from accounts.models import User
 from .models import User
+from accounts.models import User
 from movies.models import Movie
 from reviews.models import Review
 from .serializers import (
@@ -22,7 +22,6 @@ from .serializers import (
 from movies.serializers import RatingSerializer, MovieMainSerializer
 from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
 import jwt
-
 
 
 BASE_URL = 'http://127.0.0.1:8000/'
