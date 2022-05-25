@@ -24,6 +24,7 @@ urlpatterns = [
     path('profile/<int:user_pk>/', views.profile),
     path('profile/<int:user_pk>/history/', views.history),
     path('profile/<int:user_pk>/reviews/', views.reviews),
+    path('profile/<int:user_pk>/movies/', views.movies),
 
     # 팔로우/팔로잉
     path('profile/<int:user_pk>/following/', views.following),

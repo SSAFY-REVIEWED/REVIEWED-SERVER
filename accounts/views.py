@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -16,6 +16,7 @@ from .serializers import (
     UserSerializer,
     UserMiniSerializer
 )
+from movies.serializers import RatingSerializer
 from reviews.serializers import ReviewListSerializer
 import jwt
 
@@ -103,6 +104,7 @@ def profile(request, user_pk):
 def history(request):
     return
 
+
 @api_view(['GET'])
 def reviews(request, user_pk):
     user = get_object_or_404(User, pk=user_pk)
@@ -114,6 +116,22 @@ def reviews(request, user_pk):
     data = {
         'hasMore': bool(paginator.num_pages>page),
         'reviews': serializer.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def movies(request, user_pk):
+    user = get_object_or_404(User, pk=user_pk)
+    rates = user.rating_set.all()
+    page = int(request.GET.get('page'))
+    paginator = Paginator(rates, 10)
+    page_obj = paginator.get_page(page)
+    serializer = RatingSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'movies': serializer.data,
         'message': f'{page} 페이지를 로드 하였습니다'
     }
     return Response(data, status=status.HTTP_200_OK)
@@ -203,7 +221,7 @@ def survey(request):
 @api_view(['GET',])
 @permission_classes([AllowAny])
 def intro(request):
-    return render(request, 'accounts/index.html')
+    return
 
 @api_view(['GET',])
 def main(request):

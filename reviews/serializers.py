@@ -30,7 +30,7 @@ class ReviewListSerializer(serializers.ModelSerializer):
 
     def get_userProfileImg(self,  obj):
         user = obj.user
-        return f'{user.profile_img}'
+        return f'/media/{user.profile_img}'
 
     def get_userName(self,  obj):
         user = obj.user
