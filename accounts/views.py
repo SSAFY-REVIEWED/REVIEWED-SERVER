@@ -72,7 +72,7 @@ def user_info(request):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'POST'])
 def profile(request, user_pk):
     if request.method == 'GET':
         user = get_object_or_404(User, pk=user_pk)
@@ -83,7 +83,7 @@ def profile(request, user_pk):
         serializer['levelPercentage'] = per
         return Response(serializer, status=status.HTTP_200_OK)
 
-    elif request.method == 'PATCH':
+    elif request.method == 'POST':
         user = get_object_or_404(User, pk=user_pk)
         if request.data.get('name'):
             user.name = request.data['name']
