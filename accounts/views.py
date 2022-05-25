@@ -65,7 +65,7 @@ def user_info(request):
     if user:
         data = {
             'name': user.name,
-            'useId': user.id,
+            'userId': user.id,
             'profileImg': '/media/' + f'{user.profile_img}',
             'survey': user.survey_genre,
         }
