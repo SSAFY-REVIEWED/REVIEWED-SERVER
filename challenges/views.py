@@ -35,7 +35,7 @@ def challenges(request):
                 else:
                     count += 1
         tmp['movie_list'] = movies_list
-        tmp['progress'] = round(count / length)
+        tmp['progress'] = round(count / length * 100)
         data.append(tmp)
     context = {
         'challenges': data,
