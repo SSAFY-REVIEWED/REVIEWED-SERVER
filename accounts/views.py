@@ -16,7 +16,8 @@ from .serializers import (
     UserJWTLoginSerializer,
     UserSerializer,
     UserMiniSerializer,
-    UserSearchSerializer
+    UserSearchSerializer,
+    UserRankingSerializer
 )
 from movies.serializers import RatingSerializer, MovieMainSerializer
 from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
@@ -309,7 +310,16 @@ def search(request):
 
 @api_view(['GET',])
 def ranking(request):
-    return 
+    users = User.objects.order_by('-exp')[:15]
+    print(users)
+    serializers = UserRankingSerializer(users, many=True).data
+    for user in serializers:
+        print(user)
+        experi = user['exp']
+        lv, per = level(experi)
+        user['level'] = lv
+        user['levelImg'] = f'/media/{lv}.jpg'
+    return Response(serializers, status=status.HTTP_200_OK)
 
 
 @api_view(['GET',])

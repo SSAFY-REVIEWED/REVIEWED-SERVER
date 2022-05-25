@@ -12,6 +12,23 @@ class UserMiniSerializer(serializers.ModelSerializer):
             'userId', 'name', 'profileImg',
         )
 
+class UserRankingSerializer(serializers.ModelSerializer):
+    profileImg = serializers.ImageField(source="profile_img")
+    userId = serializers.IntegerField(source="id")
+
+    levelImg = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = (
+            'userId', 'name', 'profileImg', 'exp', 'levelImg', 'level'
+        )
+
+    def get_levelImg(self,  obj):
+        return ''
+
+    def get_level(self,  obj):
+        return ''
 
 class UserSearchSerializer(serializers.ModelSerializer):
     profileImg = serializers.ImageField(source="profile_img")
