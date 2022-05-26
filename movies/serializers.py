@@ -97,4 +97,4 @@ class MovieMainSerializer(serializers.ModelSerializer):
         return f'https://image.tmdb.org/t/p/w500{obj.poster_url}'
 
     def get_like(self,  obj):
-        return ''
+        return False

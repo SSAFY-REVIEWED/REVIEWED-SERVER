@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from .models import Review, Comment
 from accounts.models import User
+from movies.models import Rating
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,13 +13,16 @@ from accounts.views import get_user
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 def detail(request, review_pk):
+    user = get_user(request.headers)
     if request.method == 'GET':
         review = get_object_or_404(Review, pk=review_pk)
         review.views += 1
         review.save()
-        serializer = ReviewListSerializer(review)
+        serializer = ReviewListSerializer(review).data
+        if review.like_users.filter(pk=user.id).exists():
+            serializer['like'] = True
         data = {
-            'review': serializer.data,
+            'review': serializer,
             'message': '리뷰를 불러왔습니다.',
         }
         return Response(data, status=status.HTTP_200_OK)
@@ -31,9 +35,11 @@ def detail(request, review_pk):
         if request.data.get('spoiler'):
             review.spoiler = bool(request.data['spoiler'])
         review.save()
-        serializer = ReviewListSerializer(review)
+        serializer = ReviewListSerializer(review).data
+        if review.like_users.filter(pk=user.id).exists():
+            serializer['like'] = True
         data = {
-            'review': serializer.data,
+            'review': serializer,
             'message': '리뷰를 성공적으로 수정했습니다.',
         }
         return Response(data, status=status.HTTP_200_OK)

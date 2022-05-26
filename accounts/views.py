@@ -21,7 +21,6 @@ from .serializers import (
 from movies.serializers import RatingSerializer, MovieMainSerializer
 from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
 import jwt
-import random
 
 
 BASE_URL = 'http://127.0.0.1:8000/'
@@ -71,7 +70,7 @@ def user_info(request):
             'profileImg': f'/media/{user.profile_img}',
             'survey': user.survey_genre,
         }
-        return Response(data)
+        return Response(data, status=status.HTTP_200_OK)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -311,16 +310,13 @@ def ranking(request):
 @api_view(['GET',])
 def main(request):
     user = get_user(request.headers)
-    x = random.randrange(0, 1000)
-    movies = Movie.objects.all()[x:x+10]
+    movies = Movie.objects.all()[:20]
     serializers = MovieMainSerializer(movies, many=True).data
     for movie in serializers:
         m_id = movie.get('movieId')
         tmp = Movie.objects.get(pk=m_id)
-        liked = False
         if tmp.like_users.filter(pk=user.id).exists():
-            liked = True
-            movie['like'] = liked
+            movie['like'] = True
     return Response(serializers, status=status.HTTP_200_OK)
 
 '''

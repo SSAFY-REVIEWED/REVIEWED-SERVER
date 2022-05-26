@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.db.models import Avg
 from .models import Movie, Rating
 from reviews.models import Review
 from rest_framework import status
@@ -64,20 +65,17 @@ def ratings(request, movie_pk):
 
     Rating.objects.create(score = rate, user=user, movie=movie)
     if Review.objects.filter(user_id=user.id, movie_id=movie.id).exists():
-        tmp = Review.objects.get(user_id=user.id, movie_id=movie.id)
+        tmp = Review.objects.filter(user_id=user.id, movie_id=movie.id)[0]
         tmp.rate = rate
         tmp.save()
 
-    total = 0
-    tmp = movie.rating_set.all()
-    for t in tmp:
-        total += t.score
-    ea = movie.rating_set.count()
-    avg = total / ea
+    avg = movie.rating_set.all().aggregate(a=Avg('score'))['a']
+    if not avg:
+        avg = 0.0
 
     context = {
         'message': '평점 부여 완료',
-        'rates': avg
+        'voteAverage': avg
     }
     return Response(context, status=status.HTTP_200_OK)
 
@@ -133,6 +131,9 @@ def reviews(request, movie_pk):
 
         try:
             review_og = Review.objects.filter(user=user, movie=movie).order_by('-id')[0]
+            rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
+            review_og.rate = rate
+            review_og.save()
             review = ReviewListSerializer(review_og).data
             if review_og.like_users.filter(pk=user.id).exists():
                 review['like'] = True
