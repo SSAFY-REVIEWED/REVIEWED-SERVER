@@ -14,12 +14,13 @@ from rest_framework.response import Response
 def challenges(request):
     user = get_user(request.headers)
     challenges = Challenge.objects.all()
+    event = []
     data = []
     for challenge in challenges:
         tmp = {
             'name': challenge.name,
             'completed': False,
-            'movie_list': dict(),
+            'movieList': dict(),
             'progress': 0,
         }
         movies = challenge.listed_movies.all()
@@ -40,8 +41,12 @@ def challenges(request):
             user.save()
         tmp['movie_list'] = movies_list
         tmp['progress'] = round(count / length * 100)
-        data.append(tmp)
+        if challenge.event:
+            event.append(tmp)
+        else:
+            data.append(tmp)
     context = {
+        'event': event,
         'challenges': data,
         'message': '챌린지 리스트를 성공적으로 불러왔습니다.'
     }
@@ -62,6 +67,8 @@ def edit(request):
         mm = request.data['movies']
         movies = list(map(int, mm.split(' ')))
         challenge = Challenge.objects.create()
+        if request.data['event'] == 'true':
+            challenge.event = True
         challenge.name = name
         challenge.reward = reward
         challenge.save()

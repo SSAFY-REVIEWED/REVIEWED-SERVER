@@ -12,6 +12,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
 class MovieChallengerSerializer(serializers.ModelSerializer):
 
     movieTitle = serializers.SerializerMethodField()
+    movieId = serializers.SerializerMethodField()
     posterUrl = serializers.SerializerMethodField()
     voteAverage = serializers.SerializerMethodField()
     reviewed = serializers.SerializerMethodField()
@@ -22,6 +23,9 @@ class MovieChallengerSerializer(serializers.ModelSerializer):
 
     def get_movieTitle(self,  obj):
         return obj.title
+        
+    def get_movieTitle(self,  obj):
+        return obj.id
 
     def get_voteAverage(self,  obj):
         ratings = obj.rating_set.all()

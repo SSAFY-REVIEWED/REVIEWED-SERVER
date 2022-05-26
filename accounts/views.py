@@ -246,7 +246,7 @@ def email_validate(request):
 @api_view(['POST'])
 def survey(request):
     user = get_user(request.headers)
-    survey = request.data['preferenceGenreList']
+    survey = request.data['preferenceGenreList'] # 장르 한글명만 담아서
     user.survey_genre = survey
     user.save()
     data = {
@@ -296,10 +296,8 @@ def search(request):
 @api_view(['GET',])
 def ranking(request):
     users = User.objects.order_by('-exp')[:15]
-    print(users)
     serializers = UserRankingSerializer(users, many=True).data
     for user in serializers:
-        print(user)
         experi = user['exp']
         lv, per = level(experi)
         user['level'] = lv
@@ -318,12 +316,19 @@ def main(request):
         x = i * 10
         movies = Movie.objects.all()[x:x+10]
         serializers = MovieMainSerializer(movies, many=True).data
-        for k in range(20):
+        for k in range(10):
             if movies[k].like_users.filter(pk=user.id).exists():
                 serializers[k]['like'] = True
         tmp['movieList'] = serializers
         total[i] = tmp
     return Response(total, status=status.HTTP_200_OK)
+
+@api_view(['GET',])
+def recommend(request):
+    user = get_user(request.headers)
+    survey = user.survey
+    return Response(survey, status=status.HTTP_200_OK)
+
 
 '''
 ------------------------------

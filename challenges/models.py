@@ -8,6 +8,7 @@ class Challenge(models.Model):
     name = models.CharField(max_length=100)
     reward = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    event = models.BooleanField(default=False)
 
     completed_users = models.ManyToManyField(
         AUTH_USER_MODEL,
