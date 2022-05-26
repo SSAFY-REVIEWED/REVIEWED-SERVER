@@ -90,7 +90,7 @@ def comments(request, review_pk):
     comments = review.comment_set.all()
     serializer = CommentListSerializer(comments, many=True)
     data = {
-        'replyCounts': review.comment_set.count(),
+        'replyCount': review.comment_set.count(),
         'comments': serializer.data,
         'message': message
     }
