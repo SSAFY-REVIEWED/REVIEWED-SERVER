@@ -136,7 +136,6 @@ def reviews(request, movie_pk):
             review = ReviewListSerializer(review_og).data
             if review_og.like_users.filter(pk=user.id).exists():
                 review['like'] = True
-
             message = '리뷰를 성공적으로 로드 했습니다.'
             stat = status.HTTP_200_OK
         except:
@@ -146,7 +145,7 @@ def reviews(request, movie_pk):
 
     reviews = {}
     if Review.objects.filter(movie=movie).order_by('-id').exists():
-        reviews = Review.objects.filter(movie=movie).order_by('-id')[:4]
+        reviews = Review.objects.filter(movie=movie).exclude(user=user).order_by('-id')[:4]
         serializer = ReviewListSerializer(reviews, many=True).data
         for i in range(len(reviews)):
             if reviews[i].like_users.filter(pk=user.id).exists():
