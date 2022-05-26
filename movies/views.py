@@ -85,7 +85,10 @@ def reviews(request, movie_pk):
     user = get_user(request.headers)
     movie = get_object_or_404(Movie, pk=movie_pk)
     if request.method == 'POST':
-        review = Review.objects.create(user=user, movie=movie)
+        if Review.objects.filter(user=user, movie=movie).exists():
+            review = Review.objects.filter(user=user, movie=movie)[0]
+        else:
+            review = Review.objects.create(user=user, movie=movie)
         review.title = request.data['reviewTitle']
         review.content = request.data['content']
         if request.data.get('spoiler') == 'true':
