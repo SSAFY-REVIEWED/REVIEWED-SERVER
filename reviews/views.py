@@ -32,7 +32,7 @@ def detail(request, review_pk):
             review.title = request.data['reviewTitle']
         if request.data.get('content'):
             review.content = request.data['content']
-        if request.data.get('spoiler'):
+        if request.data.get('spoiler') == 'true':
             review.spoiler = True
         else:
             review.spoiler = False
