@@ -28,8 +28,6 @@ def detail(request, review_pk):
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == 'PATCH':
         review = get_object_or_404(Review, pk=review_pk)
-        if request.data.get('reviewTitle'):
-            review.title = request.data['reviewTitle']
         if request.data.get('content'):
             review.content = request.data['content']
         if request.data.get('spoiler') == 'true':
