@@ -88,7 +88,7 @@ def reviews(request, movie_pk):
         review = Review.objects.create(user=user, movie=movie)
         review.title = request.data['reviewTitle']
         review.content = request.data['content']
-        review.spoiler = request.data['spoiler']
+        review.spoiler = bool(request.data['spoiler'])
         if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
             rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
         else: 
