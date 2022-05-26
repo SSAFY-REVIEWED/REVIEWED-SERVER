@@ -190,12 +190,14 @@ def following(request, user_pk):
     serializers = UserMiniSerializer(followings, many=True).data
     return Response(serializers, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def followed(request, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     followers = user.followers.all()
     serializers = UserMiniSerializer(followers, many=True).data
     return Response(serializers, status=status.HTTP_200_OK)
+
 
 @api_view(['DELETE'])
 def cancel(request, user_pk, target_pk):
@@ -251,6 +253,7 @@ def email_validate(request):
 def survey(request):
     user = get_user(request.headers)
     survey = request.data['preferenceGenreList'] # 장르 한글명만 담아서
+    print(survey)
     user.survey_genre = survey
     user.save()
     data = {
@@ -334,8 +337,9 @@ def main(request):
     tmp['movieList'] = serializers
     total['lately'] = tmp
 
-    survey = user.survey_genre
-    survey = set(survey[1:len(survey)-1].split(','))
+    # survey = user.survey_genre
+    # survey = set(survey[1:len(survey)-1].split(','))
+    survey = ['액션', 'SF']
     for i in survey:
         tmp = {}
         tmp['name'] = f'{i} 장르 추천영화'
