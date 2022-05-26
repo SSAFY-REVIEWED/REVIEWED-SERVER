@@ -14,6 +14,8 @@ urlpatterns = [
     path('survey/', views.survey),
     path('search/', views.search),
     path('ranking/', views.ranking),
+    path('recommend/', views.recommend),
+
 
     # 로그인, 회원가입
     path('login/', views.JWTLoginView.as_view()),

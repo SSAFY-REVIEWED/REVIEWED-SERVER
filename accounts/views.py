@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from accounts.models import User
-from movies.models import Movie
+from movies.models import Movie, Genre
 from .serializers import (
     UserJWTSignupSerializer, 
     UserJWTLoginSerializer,
@@ -78,8 +78,11 @@ def user_info(request):
 @api_view(['GET', 'POST'])
 def profile(request, user_pk):
     if request.method == 'GET':
+        me = get_user(request.headers)
         user = get_object_or_404(User, pk=user_pk)
         serializer = UserSerializer(user).data
+        if me.followings.filter(pk=user.id).exists():
+            serializer['follow'] = True
         lv, per = level(user.exp)
         serializer['level'] = lv
         serializer['levelImg'] = f'/media/{lv}.jpg'
@@ -326,8 +329,17 @@ def main(request):
 @api_view(['GET',])
 def recommend(request):
     user = get_user(request.headers)
-    survey = user.survey
-    return Response(survey, status=status.HTTP_200_OK)
+    survey = user.survey_genre
+    survey = survey[1:len(survey)-1].split(',')
+    genre = Genre.objects.get(name=survey[0])
+    print(genre)
+    data = {
+        'id': genre.id,
+        'name': genre.name,
+    }
+    movies = Movie.objects.filter(genres__incontains=data)
+    print(movies)
+    return Response(status=status.HTTP_200_OK)
 
 
 '''
