@@ -130,8 +130,10 @@ def reviews(request, movie_pk):
             return Response(data, status=status.HTTP_200_OK)
 
         try:
-            review_og = Review.objects.filter(user=user, movie=movie).order_by('-id')[0]
-            rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
+            review_og = Review.objects.filter(user=user, movie=movie_pk).order_by('-id')[0]
+            rate = 0
+            if Rating.objects.filter(user=user, movie=movie).exists():
+                rate = Rating.objects.get(user=user, movie=movie)
             review_og.rate = rate
             review_og.save()
             review = ReviewListSerializer(review_og).data
@@ -144,9 +146,9 @@ def reviews(request, movie_pk):
             message = '리뷰를 성공적으로 로드 했습니다. 내가 작성한 리뷰 없음'
             stat = status.HTTP_200_OK
 
-    reviews = {}
+    serializer = {}
     if Review.objects.filter(movie=movie).order_by('-id').exists():
-        reviews = Review.objects.filter(movie=movie).exclude(user=user).order_by('-id')[:4]
+        reviews = Review.objects.filter(movie_id=movie_pk).exclude(user_id=user.id).order_by('-id')[:4]
         serializer = ReviewListSerializer(reviews, many=True).data
         for i in range(len(reviews)):
             if reviews[i].like_users.filter(pk=user.id).exists():
