@@ -33,7 +33,9 @@ def detail(request, review_pk):
         if request.data.get('content'):
             review.content = request.data['content']
         if request.data.get('spoiler'):
-            review.spoiler = bool(request.data['spoiler'])
+            review.spoiler = True
+        else:
+            review.spoiler = False
         review.save()
         serializer = ReviewListSerializer(review).data
         if review.like_users.filter(pk=user.id).exists():
