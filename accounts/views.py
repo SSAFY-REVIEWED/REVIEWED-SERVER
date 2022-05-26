@@ -286,7 +286,7 @@ def search(request):
             movie['like'] = liked
         return Response(serializers, status=status.HTTP_200_OK)
     elif type == 'users':
-        targets = User.objects.filter(name__icontains=query)
+        targets = User.objects.filter(name__icontains=query).exclude(id=user.id)
         serializers = UserSearchSerializer(targets, many=True).data
         for target in serializers:
             t_id = target.get('userId')
