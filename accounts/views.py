@@ -315,13 +315,23 @@ def main(request):
 
     tmp = {}
     tmp['name'] = 'TMDB 평점 TOP 10 영화'
-    movies = Movie.objects.order_by('vote_average')[:10]
+    movies = Movie.objects.order_by('-vote_average')[:10]
     serializers = MovieMainSerializer(movies, many=True).data
     for k in range(10):
         if movies[k].like_users.filter(pk=user.id).exists():
             serializers[k]['like'] = True
     tmp['movieList'] = serializers
     total['top10'] = tmp
+
+    tmp = {}
+    tmp['name'] = '최근 인기있는 영화'
+    movies = Movie.objects.order_by('-release_date')[:10]
+    serializers = MovieMainSerializer(movies, many=True).data
+    for k in range(10):
+        if movies[k].like_users.filter(pk=user.id).exists():
+            serializers[k]['like'] = True
+    tmp['movieList'] = serializers
+    total['lately'] = tmp
 
     survey = user.survey_genre
     survey = set(survey[1:len(survey)-1].split(','))
