@@ -197,6 +197,7 @@ def followed(request, user_pk):
     serializers = UserMiniSerializer(followers, many=True).data
     return Response(serializers, status=status.HTTP_200_OK)
 
+@api_view(['DELETE'])
 def cancel(request, user_pk, target_pk):
     target = get_object_or_404(User, pk=target_pk)
     user = get_object_or_404(User, pk=user_pk)
