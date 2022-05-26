@@ -251,11 +251,10 @@ def email_validate(request):
 
 @api_view(['POST'])
 def survey(request):
-    user = get_user(request.headers)
-    survey = request.data['preferenceGenreList'] # 장르 한글명만 담아서
-    print(survey)
-    user.survey_genre = survey
-    user.save()
+    # user = get_user(request.headers)
+    # survey = request.data['preferenceGenreList'] # 장르 한글명만 담아서
+    # user.survey_genre = survey
+    # user.save()
     data = {
             'message': "선호 장르 선택이 완료되었습니다."
         }
