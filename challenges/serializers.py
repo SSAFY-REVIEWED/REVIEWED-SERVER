@@ -19,12 +19,12 @@ class MovieChallengerSerializer(serializers.ModelSerializer):
     
     class Meta():
         model = Movie 
-        fields = ('movieTitle', 'posterUrl', 'voteAverage', 'reviewed')
+        fields = ('movieTitle', 'movieId', 'posterUrl', 'voteAverage', 'reviewed')
 
     def get_movieTitle(self,  obj):
         return obj.title
-        
-    def get_movieTitle(self,  obj):
+
+    def get_movieId(self,  obj):
         return obj.id
 
     def get_voteAverage(self,  obj):
