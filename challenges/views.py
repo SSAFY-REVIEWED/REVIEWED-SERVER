@@ -36,12 +36,12 @@ def challenges(request):
                     movies_list[i]['reviewed'] = False
                 else:
                     count += 1
+            tmp['progress'] = round(count / length * 100)
         if count == length:
             challenge.completed_users.add(user)
             user.exp += challenge.reward
             user.save()
         tmp['movie_list'] = movies_list
-        tmp['progress'] = round(count / length * 100)
         if challenge.event:
             event.append(tmp)
         else:
