@@ -310,14 +310,20 @@ def ranking(request):
 @api_view(['GET',])
 def main(request):
     user = get_user(request.headers)
-    movies = Movie.objects.all()[:20]
-    serializers = MovieMainSerializer(movies, many=True).data
-    for movie in serializers:
-        m_id = movie.get('movieId')
-        tmp = Movie.objects.get(pk=m_id)
-        if tmp.like_users.filter(pk=user.id).exists():
-            movie['like'] = True
-    return Response(serializers, status=status.HTTP_200_OK)
+    name = ['이번주의 영화 추천', '선호 장르 기반 영화추천', '이번주 HOT 영화 추천']
+    total = {}
+    for i in range(3):
+        tmp = {}
+        tmp['name'] = name[i]
+        x = i * 10
+        movies = Movie.objects.all()[x:x+10]
+        serializers = MovieMainSerializer(movies, many=True).data
+        for k in range(20):
+            if movies[k].like_users.filter(pk=user.id).exists():
+                serializers[k]['like'] = True
+        tmp['movieList'] = serializers
+        total[i] = tmp
+    return Response(total, status=status.HTTP_200_OK)
 
 '''
 ------------------------------
