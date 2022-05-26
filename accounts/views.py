@@ -320,7 +320,7 @@ def main(request):
         liked = False
         if tmp.like_users.filter(pk=user.id).exists():
             liked = True
-        movie['like'] = liked
+            movie['like'] = liked
     return Response(serializers, status=status.HTTP_200_OK)
 
 '''
