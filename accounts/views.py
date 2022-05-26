@@ -311,13 +311,24 @@ def ranking(request):
 @api_view(['GET',])
 def main(request):
     user = get_user(request.headers)
-    name = ['이번주의 영화 추천', '선호 장르 기반 영화추천', '이번주 HOT 영화 추천']
     total = {}
-    for i in range(3):
+
+    tmp = {}
+    tmp['name'] = 'TMDB 평점 TOP 10 영화'
+    movies = Movie.objects.order_by('vote_average')[:10]
+    serializers = MovieMainSerializer(movies, many=True).data
+    for k in range(10):
+        if movies[k].like_users.filter(pk=user.id).exists():
+            serializers[k]['like'] = True
+    tmp['movieList'] = serializers
+    total['top10'] = tmp
+
+    survey = user.survey_genre
+    survey = set(survey[1:len(survey)-1].split(','))
+    for i in survey:
         tmp = {}
-        tmp['name'] = name[i]
-        x = i * 10
-        movies = Movie.objects.all()[x:x+10]
+        tmp['name'] = f'{i} 장르 추천영화'
+        movies = Movie.objects.filter(genres__0__name=i).order_by('?')[:10]
         serializers = MovieMainSerializer(movies, many=True).data
         for k in range(10):
             if movies[k].like_users.filter(pk=user.id).exists():
@@ -325,21 +336,6 @@ def main(request):
         tmp['movieList'] = serializers
         total[i] = tmp
     return Response(total, status=status.HTTP_200_OK)
-
-@api_view(['GET',])
-def recommend(request):
-    user = get_user(request.headers)
-    survey = user.survey_genre
-    survey = survey[1:len(survey)-1].split(',')
-    genre = Genre.objects.get(name=survey[0])
-    print(genre)
-    data = {
-        'id': genre.id,
-        'name': genre.name,
-    }
-    movies = Movie.objects.filter(genres__incontains=data)
-    print(movies)
-    return Response(status=status.HTTP_200_OK)
 
 
 '''
