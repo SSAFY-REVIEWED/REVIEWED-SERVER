@@ -29,6 +29,7 @@ def challenges(request):
         movies_list = MovieChallengerSerializer(movies, many=True).data
         if challenge.completed_users.filter(pk=user.id):
             tmp['completed'] = True
+            tmp['progress'] = 100
         else:
             for i in range(length):
                 if not movies[i].review_set.filter(user=user).exists():
