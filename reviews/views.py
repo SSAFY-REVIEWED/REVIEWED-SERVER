@@ -29,7 +29,7 @@ def detail(request, review_pk):
         if request.data.get('content'):
             review.content = request.data['content']
         if request.data.get('spoiler'):
-            review.spoiler = request.data['spoiler']
+            review.spoiler = bool(request.data['spoiler'])
         review.save()
         serializer = ReviewListSerializer(review)
         data = {

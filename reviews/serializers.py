@@ -54,11 +54,7 @@ class ReviewListSerializer(serializers.ModelSerializer):
         return tmp['a']
 
     def get_like(self,  obj):
-        user = obj.user
-        like = False
-        if obj.like_users.filter(id=user.id).exists():
-            like = True
-        return like
+        return False
 
     def get_replyCount(self,  obj):
         counts = obj.comment_set.count()

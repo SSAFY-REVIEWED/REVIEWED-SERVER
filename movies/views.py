@@ -25,7 +25,6 @@ def detail(request, movie_pk):
     else: 
         rate = 0
 
-
     serializer = MovieListSerializer(movie).data
     serializer['rate'] = rate
     serializer['like'] = liked
@@ -87,15 +86,11 @@ def ratings(request, movie_pk):
 def reviews(request, movie_pk):
     user = get_user(request.headers)
     movie = get_object_or_404(Movie, pk=movie_pk)
-    liked = False
-    if movie.like_users.filter(pk=user.id).exists():
-        liked = True
     if request.method == 'POST':
         review = Review.objects.create(user=user, movie=movie)
         review.title = request.data['reviewTitle']
         review.content = request.data['content']
         review.spoiler = request.data['spoiler']
-        review.like = liked
         if Rating.objects.filter(user_id=user.id, movie_id=movie.id).exists():
             rate = Rating.objects.get(user_id=user.id, movie_id=movie.id).score
         else: 
@@ -104,6 +99,8 @@ def reviews(request, movie_pk):
         review.save()
         review = ReviewListSerializer(review).data
         message = '리뷰가 성공적으로 생성되었습니다.'
+        user.exp += 10
+        user.save()
         stat = status.HTTP_201_CREATED
 
     elif request.method == 'GET':
@@ -123,30 +120,40 @@ def reviews(request, movie_pk):
             reviews = movie.review_set.order_by(query)
             paginator = Paginator(reviews, 10)
             page_obj = paginator.get_page(page)
-            serializer = ReviewListSerializer(page_obj, many=True)
+            serializer = ReviewListSerializer(page_obj, many=True).data
+            for i in range(len(page_obj)):
+                if page_obj[i].like_users.filter(pk=user.id).exists():
+                    serializer[i]['like'] = True
             data = {
                 'hasMore': bool(paginator.num_pages>page),
-                'reviews': serializer.data,
+                'reviews': serializer,
                 'message': f'{query} 검색 {page} 페이지를 로드 하였습니다'
             }
             return Response(data, status=status.HTTP_200_OK)
 
         try:
-            review = Review.objects.filter(user=user, movie=movie).order_by('-id')[0]
-            review = ReviewListSerializer(review).data
+            review_og = Review.objects.filter(user=user, movie=movie).order_by('-id')[0]
+            review = ReviewListSerializer(review_og).data
+            if review_og.like_users.filter(pk=user.id).exists():
+                review['like'] = True
+
             message = '리뷰를 성공적으로 로드 했습니다.'
             stat = status.HTTP_200_OK
         except:
             review = {}
             message = '리뷰를 성공적으로 로드 했습니다. 내가 작성한 리뷰 없음'
             stat = status.HTTP_200_OK
+
     reviews = {}
-    if Review.objects.filter(user=user, movie=movie).order_by('-id').exists():
-        reviews = Review.objects.filter(user=user, movie=movie).order_by('-id')
-        reviews = ReviewListSerializer(reviews, many=True).data
+    if Review.objects.filter(movie=movie).order_by('-id').exists():
+        reviews = Review.objects.filter(movie=movie).order_by('-id')[:4]
+        serializer = ReviewListSerializer(reviews, many=True).data
+        for i in range(len(reviews)):
+            if reviews[i].like_users.filter(pk=user.id).exists():
+                serializer[i]['like'] = True
     data = {
         'review': review,
-        'reviews': reviews,
+        'reviews': serializer,
         'message': message
     }
     return Response(data, status=stat)
