@@ -86,7 +86,7 @@ def reviews(request, movie_pk):
     movie = get_object_or_404(Movie, pk=movie_pk)
     if request.method == 'POST':
         if Review.objects.filter(user=user, movie=movie).exists():
-            review = Review.objects.filter(user=user, movie=movie).order_by('-id')[0]
+            review = Review.objects.get(user=user, movie=movie).order_by('-id')
         else:
             review = Review.objects.create(user=user, movie=movie)
         review.title = request.data['reviewTitle']
@@ -165,4 +165,3 @@ def reviews(request, movie_pk):
         'message': message
     }
     return Response(data, status=stat)
-

@@ -14,10 +14,11 @@ class RatingSerializer(serializers.ModelSerializer):
     movieTitle = serializers.SerializerMethodField()
     posterUrl = serializers.SerializerMethodField()
     rate = serializers.SerializerMethodField()
+    like = serializers.SerializerMethodField()
     
     class Meta():
         model = Rating 
-        fields = ('movieId', 'movieTitle', 'posterUrl', 'rate')
+        fields = ('movieId', 'movieTitle', 'posterUrl', 'rate', 'like')
 
     def get_movieId(self,  obj):
         movie = obj.movie
@@ -30,6 +31,8 @@ class RatingSerializer(serializers.ModelSerializer):
         return f'https://image.tmdb.org/t/p/w500{movie.poster_url}'
     def get_rate(self,  obj):
         return obj.score
+    def get_like(self,  obj):
+        return False
 
 class LikedMoviesSerializer(serializers.ModelSerializer):
 	

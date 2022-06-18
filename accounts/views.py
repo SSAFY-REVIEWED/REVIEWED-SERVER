@@ -174,10 +174,14 @@ def movies(request, user_pk):
     page = int(request.GET.get('page'))
     paginator = Paginator(rates, 10)
     page_obj = paginator.get_page(page)
-    serializer = RatingSerializer(page_obj, many=True)
+    serializer = RatingSerializer(page_obj, many=True).data
+    for k in range(len(page_obj)):
+        movie = rates[k].movie
+        if movie.like_users.filter(pk=user.id).exists():
+            serializer[k]['like'] = True
     data = {
         'hasMore': bool(paginator.num_pages>page),
-        'movies': serializer.data,
+        'movies': serializer,
         'message': f'{page} 페이지를 로드 하였습니다'
     }
     return Response(data, status=status.HTTP_200_OK)
@@ -269,7 +273,6 @@ def email_validate(request):
 def survey(request):
     user = get_user(request.headers)
     survey = json.loads(request.data['preferenceGenreList']) # 장르 한글명만 담아서
-    print(survey)
     user.survey_genre = survey
     user.save()
     data = {
@@ -332,7 +335,6 @@ def ranking(request):
 def main(request):
     user = get_user(request.headers)
     total = {}
-
     tmp = {}
     tmp['name'] = 'TMDB 평점 TOP 10 영화'
     movies = Movie.objects.order_by('-vote_average')[:10]
@@ -353,9 +355,10 @@ def main(request):
     tmp['movieList'] = serializers
     total['lately'] = tmp
 
-    # survey = user.survey_genre
-    # survey = set(survey[1:len(survey)-1].split(','))
-    survey = ['액션', 'SF']
+    survey = user.survey_genre
+    survey = survey[2: -2].split("', '")
+    print(survey)
+
     for i in survey:
         tmp = {}
         tmp['name'] = f'{i} 장르 추천영화'

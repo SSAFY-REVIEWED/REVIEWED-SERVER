@@ -9,5 +9,4 @@ urlpatterns = [
     path('<int:movie_pk>/ratings/', views.ratings),
 
     path('<int:movie_pk>/reviews/', views.reviews),
-
 ]
