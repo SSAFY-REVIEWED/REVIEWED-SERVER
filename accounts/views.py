@@ -356,19 +356,18 @@ def main(request):
     total['lately'] = tmp
 
     survey = user.survey_genre
-    survey = survey[2: -2].split("', '")
-    print(survey)
 
     for i in survey:
         tmp = {}
         tmp['name'] = f'{i} 장르 추천영화'
-        movies = Movie.objects.filter(genres__0__name=i).order_by('?')[:10]
-        serializers = MovieMainSerializer(movies, many=True).data
-        for k in range(10):
-            if movies[k].like_users.filter(pk=user.id).exists():
-                serializers[k]['like'] = True
-        tmp['movieList'] = serializers
-        total[i] = tmp
+        if Movie.objects.filter(genres__0__name=i).order_by('?').exists():
+            movies = Movie.objects.filter(genres__0__name=i).order_by('?')[:10]
+            serializers = MovieMainSerializer(movies, many=True).data
+            for k in range(len(movies)):
+                if movies[k].like_users.filter(pk=user.id).exists():
+                    serializers[k]['like'] = True
+            tmp['movieList'] = serializers
+            total[i] = tmp
     return Response(total, status=status.HTTP_200_OK)
 
 
