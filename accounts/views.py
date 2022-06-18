@@ -18,9 +18,9 @@ from .serializers import (
     UserSearchSerializer,
     UserRankingSerializer
 )
-from movies.serializers import RatingSerializer, MovieMainSerializer
+from movies.serializers import RatingSerializer, MovieMainSerializer, LikedMoviesSerializer
 from reviews.serializers import ReviewListSerializer, ReviewDateSerializer, ReviewGenreSerializer
-import jwt
+import jwt, json
 
 
 BASE_URL = 'http://127.0.0.1:8000/'
@@ -68,7 +68,7 @@ def user_info(request):
             'name': user.name,
             'userId': user.id,
             'profileImg': f'/media/{user.profile_img}',
-            'survey': user.survey_genre,
+            'survey': bool(user.survey_genre),
         }
         return Response(data, status=status.HTTP_200_OK)
     else:
@@ -184,6 +184,22 @@ def movies(request, user_pk):
 
 
 @api_view(['GET'])
+def likes(request, user_pk):
+    user = get_object_or_404(User, pk=user_pk)
+    movies = user.like_movies.all()
+    page = int(request.GET.get('page'))
+    paginator = Paginator(movies, 10)
+    page_obj = paginator.get_page(page)
+    serializers = LikedMoviesSerializer(page_obj, many=True)
+    data = {
+        'hasMore': bool(paginator.num_pages>page),
+        'movies': serializers.data,
+        'message': f'{page} 페이지를 로드 하였습니다'
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
 def following(request, user_pk):
     user = get_object_or_404(User, pk=user_pk)
     followings = user.followings.all()
@@ -251,10 +267,11 @@ def email_validate(request):
 
 @api_view(['POST'])
 def survey(request):
-    # user = get_user(request.headers)
-    # survey = request.data['preferenceGenreList'] # 장르 한글명만 담아서
-    # user.survey_genre = survey
-    # user.save()
+    user = get_user(request.headers)
+    survey = json.loads(request.data['preferenceGenreList']) # 장르 한글명만 담아서
+    print(survey)
+    user.survey_genre = survey
+    user.save()
     data = {
             'message': "선호 장르 선택이 완료되었습니다."
         }

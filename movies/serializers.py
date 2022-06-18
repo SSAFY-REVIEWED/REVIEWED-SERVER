@@ -31,6 +31,30 @@ class RatingSerializer(serializers.ModelSerializer):
     def get_rate(self,  obj):
         return obj.score
 
+class LikedMoviesSerializer(serializers.ModelSerializer):
+	
+    movieId= serializers.SerializerMethodField()
+    movieTitle = serializers.SerializerMethodField()
+    posterUrl = serializers.SerializerMethodField()
+    rate = serializers.SerializerMethodField()
+    
+    class Meta():
+        model = Rating 
+        fields = ('movieId', 'movieTitle', 'posterUrl', 'rate')
+
+    def get_movieId(self,  obj):
+        return obj.id
+    def get_movieTitle(self,  obj):
+        return obj.title
+    def get_posterUrl(self,  obj):
+        return f'https://image.tmdb.org/t/p/w500{obj.poster_url}'
+    def get_rate(self,  obj):
+        ratings = obj.rating_set.all()
+        tmp = ratings.all().aggregate(a=Avg('score'))
+        if not tmp['a']:
+            tmp['a'] = 0.0
+        return tmp['a']
+
 
 class MovieListSerializer(serializers.ModelSerializer):
     movieId = serializers.IntegerField(source="pk")
